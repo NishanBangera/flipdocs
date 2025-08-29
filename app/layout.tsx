@@ -10,6 +10,7 @@ import {
 } from '@clerk/nextjs'
 import "./globals.css";
 import Sidebar from "./components/sidebar/sidebar";
+import { RootProvider } from "./components/providers/root-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
               <UserButton />
             </SignedIn>
           </header> */}
+          <RootProvider>
           <div className="flex w-full h-screen">
             <div className="overflow-y-auto dark:bg-secondary-foreground w-[220px] border">
               <Sidebar />
@@ -53,6 +55,7 @@ export default function RootLayout({
               <div className="flex-grow w-full h-0 overflow-auto">{children}</div>
             </div>
           </div>
+          </RootProvider>
         </body>
       </html>
     </ClerkProvider>

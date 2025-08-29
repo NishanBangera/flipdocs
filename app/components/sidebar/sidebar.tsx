@@ -1,6 +1,4 @@
-import { IconBrain, IconScript, IconTableOptions } from '@tabler/icons-react';
-import { Box, Element4, Receipt2, SearchNormal1 } from "iconsax-reactjs";
-import Image from "next/image";
+import { Element4,ProfileCircle,Book1 } from "iconsax-reactjs";
 import SidebarItem from "./sidebar-item";
 import UserDetailsCard from "./user-card";
 
@@ -13,13 +11,13 @@ function Sidebar() {
             icon: <Element4 />,
             isParent: false,
             external: false,
-            disabled: true,
+            disabled: false,
         },
         {
             label: "Manage Flipbooks",
-            id: "flipbooks",
-            url: "/flipbooks",
-            icon: <Receipt2 />,
+            id: "manage-flipbooks",
+            url: "/manage-flipbooks",
+            icon: <Book1 />,
             isParent: false,
             external: false,
             disabled: false,
@@ -28,7 +26,7 @@ function Sidebar() {
             label: "Profile",
             id: "profile",
             url: "/profile",
-            icon: <SearchNormal1 />,
+            icon: <ProfileCircle />,
             isParent: false,
             external: false,
             disabled: false,

@@ -30,6 +30,7 @@ export const useApiClient = () => {
         try {
           // Get the current token on each request instead of capturing it in closure
           const token = await getToken();
+          console.log("Auth tokennnnnnnnnn:", token);
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -74,6 +75,7 @@ export const apiClient = createApiClient();
 
 // Error handling utility
 export const handleApiError = (error: unknown): string => {
+  console.log("Errorrrrrrrrrrrrrr:", error);
   if (axios.isAxiosError(error)) {
     if (error.response?.data?.error) {
       return error.response.data.error;

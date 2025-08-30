@@ -53,7 +53,7 @@ export function DataTable<T>({
   const [rowSelection, setRowSelection] = useState({});
 
   const totalItems = data.length;
-
+  console.log("Total Items:", data);
   const table = useReactTable({
     data,
     columns,

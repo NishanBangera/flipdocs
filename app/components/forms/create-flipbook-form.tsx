@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { useCreateFlipbook } from "@/lib/hooks/use-flipbooks";
@@ -61,12 +60,16 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
       backgroundImage: backgroundFile || undefined,
       isPublished: formData.isPublished,
     };
+    console.log("Flipbook Published:", formData.isPublished, typeof formData.isPublished);
 
     try {
+      console.log("checkkkkkkkkkkk")
       await createFlipbook.mutateAsync(createData);
+      console.log("Flipbook created successfully");
       onSuccess?.();
     } catch (error) {
       // Error handling is done in the hook
+      console.error("Error creating flipbook:", error);
     }
   };
 

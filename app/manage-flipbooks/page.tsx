@@ -27,6 +27,7 @@ export default function ManageFlipbooks() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { data: flipbooks = [], isLoading, error, refetch } = useFlipbooks();
+  console.log("Fetched flipbooks12222222:", flipbooks);
   
   // Get React Query hooks for table actions
   const togglePublish = useTogglePublish();
@@ -44,7 +45,7 @@ export default function ManageFlipbooks() {
 
   // Transform data for table display
   const tableData = flipbooks.map(transformFlipbookToTableItem);
-
+  console.log("Table Dataaaaa:", tableData);
   const handleCreateSuccess = () => {
     setIsCreateDialogOpen(false);
     // Data will be automatically refetched due to React Query invalidation
@@ -72,7 +73,7 @@ export default function ManageFlipbooks() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Manage Flipbooks</h1>
@@ -94,7 +95,7 @@ export default function ManageFlipbooks() {
         </Dialog>
       </div>
 
-      <div className="bg-card rounded-lg border">
+      <div className="flex-grow bg-card rounded-lg">
         <DataTable
           data={tableData}
           columns={columns}

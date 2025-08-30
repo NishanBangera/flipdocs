@@ -16,6 +16,7 @@ export class FlipbookApi {
   async getAll(): Promise<Flipbook[]> {
     try {
       const response = await this.apiClient.get<ApiResponse<Flipbook[]>>('/flipbooks');
+      console.log("API getAll response:", response.data);
       return response.data.data || [];
     } catch (error) {
       throw new Error(handleApiError(error));
@@ -35,15 +36,18 @@ export class FlipbookApi {
   // Create a new flipbook
   async create(data: CreateFlipbookData): Promise<Flipbook> {
     try {
+      console.log("check111111111111")
       const formData = new FormData();
+      console.log("isPublished value:", data.isPublished, typeof data.isPublished);
       formData.append('name', data.name);
       formData.append('pdf', data.pdf);
-      formData.append('isPublished', String(data.isPublished));
+      formData.append('isPublished', data.isPublished ? 'true' : 'false');
+      console.log("check22222222222")
       
       if (data.backgroundImage) {
         formData.append('backgroundImage', data.backgroundImage);
       }
-
+      console.log("check33333333333")
       const response = await this.apiClient.post<ApiResponse<Flipbook>>(
         '/flipbooks',
         formData,
@@ -57,7 +61,7 @@ export class FlipbookApi {
       if (response.data.data) {
         return response.data.data;
       }
-      
+      console.log("check44444444444", response.data.error)
       throw new Error(response.data.error || 'Failed to create flipbook');
     } catch (error) {
       throw new Error(handleApiError(error));
@@ -72,7 +76,7 @@ export class FlipbookApi {
       if (data.name) formData.append('name', data.name);
       if (data.pdf) formData.append('pdf', data.pdf);
       if (data.backgroundImage) formData.append('backgroundImage', data.backgroundImage);
-      if (data.isPublished !== undefined) formData.append('isPublished', String(data.isPublished));
+      if (data.isPublished !== undefined) formData.append('isPublished', data.isPublished ? 'true' : 'false');
 
       const response = await this.apiClient.put<ApiResponse<Flipbook>>(
         `/flipbooks/${id}`,
@@ -128,6 +132,7 @@ export class FlipbookApi {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
       const response = await this.apiClient.get<ApiResponse<DashboardStats>>('/dashboard/stats');
+      console.log("Dashboard stats response:", response.data);
       return response.data.data || { total: 0, published: 0, unpublished: 0, recent: [] };
     } catch (error) {
       throw new Error(handleApiError(error));

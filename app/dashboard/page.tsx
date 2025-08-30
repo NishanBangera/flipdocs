@@ -43,6 +43,7 @@ function StatCard({
 
 export default function DashboardPage() {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
+  console.log("Dashboard stats:", stats);
 
   if (error) {
     return (
@@ -68,21 +69,21 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Flipbooks"
-          value={stats?.total ?? 0}
+          value={stats?.totalFlipbooks ?? 0}
           description="All your flipbooks"
           icon={BookOpen}
           isLoading={isLoading}
         />
         <StatCard
           title="Published"
-          value={stats?.published ?? 0}
+          value={stats?.publishedFlipbooks ?? 0}
           description="Live flipbooks"
           icon={Eye}
           isLoading={isLoading}
         />
         <StatCard
           title="Unpublished"
-          value={stats?.unpublished ?? 0}
+          value={stats?.unpublishedFlipbooks ?? 0}
           description="Draft flipbooks"
           icon={EyeOff}
           isLoading={isLoading}
@@ -117,7 +118,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : stats?.recent && stats.recent.length > 0 ? (
+          ) : stats?.recent && stats.length > 0 ? (
             <div className="space-y-4">
               {stats.recent.slice(0, 5).map((flipbook) => (
                 <div key={flipbook.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">

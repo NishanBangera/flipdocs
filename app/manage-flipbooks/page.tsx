@@ -8,6 +8,7 @@ import { useFlipbooks, useTogglePublish, useDeleteFlipbook } from "@/lib/hooks/u
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { CreateFlipbookForm } from "../components/forms/create-flipbook-form";
+import { EditFlipbookForm } from "../components/forms/edit-flipbook-form";
 import { ErrorState } from "../components/ui/loading";
 import { Plus } from "lucide-react";
 import type { Flipbook } from "@/lib/types";
@@ -27,6 +28,8 @@ const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => 
 export default function ManageFlipbooks() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<FlipbookTableItem | null>(null);
   const { data: flipbooks = [], isLoading, error, refetch } = useFlipbooks();
   console.log("Fetched flipbooks12222222:", flipbooks);
   
@@ -40,7 +43,8 @@ export default function ManageFlipbooks() {
       (id: string) => togglePublish.mutate(id),
       (id: string) => deleteFlipbook.mutate(id),
       (id: string) => togglePublish.isPending && togglePublish.variables === id,
-      (id: string) => deleteFlipbook.isPending && deleteFlipbook.variables === id
+      (id: string) => deleteFlipbook.isPending && deleteFlipbook.variables === id,
+      (fb) => { setEditing(fb); setIsEditDialogOpen(true); }
     );
   }, [togglePublish, deleteFlipbook]);
 
@@ -54,6 +58,16 @@ export default function ManageFlipbooks() {
 
   const handleCreateCancel = () => {
     setIsCreateDialogOpen(false);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setEditing(null);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditDialogOpen(false);
+    setEditing(null);
   };
 
   if (error) {
@@ -106,6 +120,19 @@ export default function ManageFlipbooks() {
           setCurrentPage={setCurrentPage}
         />
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={(o) => { if(!o){ setEditing(null);} setIsEditDialogOpen(o); }}>
+        <DialogContent className="max-w-xs sm:max-w-md max-h-[70vh] overflow-y-hidden p-4 gap-2">
+          <DialogTitle className="text-base">Edit Flipbook</DialogTitle>
+          {editing && (
+            <EditFlipbookForm
+              flipbook={editing}
+              onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

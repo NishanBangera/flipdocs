@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Share, Trash, BookOpen, Eye, EyeOff } from "lucide-react";
+import { Share, Trash, BookOpen, Eye, EyeOff, Pencil } from "lucide-react";
 import { ArrowsSort, Filter } from "tabler-icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -17,7 +17,8 @@ export function createBooksColumns(
   togglePublish: (id: string) => void,
   deleteFlipbook: (id: string) => void,
   isToggleLoading: (id: string) => boolean,
-  isDeleteLoading: (id: string) => boolean
+  isDeleteLoading: (id: string) => boolean,
+  openEdit: (flipbook: FlipbookTableItem) => void
 ): ColumnDef<FlipbookTableItem>[] {
   return [
     {
@@ -120,6 +121,16 @@ export function createBooksColumns(
 
         return (
           <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0 cursor-pointer"
+              onClick={() => openEdit(flipbook)}
+              title="Edit flipbook"
+            >
+              <span className="sr-only">Edit</span>
+              <Pencil className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

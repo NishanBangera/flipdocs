@@ -65,6 +65,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
 
   // Update flipbook
   .put('/:id', async (ctx) => {
+    console.log("Updating Flipbook")
     const { user, params, body } = ctx as any;
     
     if (!user) {
@@ -72,7 +73,14 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
     }
 
     try {
-      const flipbook = await FlipbookService.update(params.id, user.id, body);
+      // Coerce isPublished to boolean if present
+      const payload: any = { ...body };
+      if (payload.isPublished !== undefined) {
+        const v = payload.isPublished;
+        payload.isPublished = typeof v === 'string' ? v === 'true' || v === '1' || v === 'on' : !!v;
+      }
+      const flipbook = await FlipbookService.update(params.id, user.id, payload);
+      console.log('Updatingggg flipbook:', body);
       return { data: flipbook };
     } catch (error) {
       return { error: 'Failed to update flipbook' };
@@ -82,7 +90,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
       name: t.Optional(t.String()),
       pdf: t.Optional(t.File()),
       backgroundImage: t.Optional(t.File()),
-      isPublished: t.Optional(t.Boolean())
+      isPublished: t.Optional(t.Union([t.Boolean(), t.String()]))
     })
   })
 

@@ -11,6 +11,7 @@ import { CreateFlipbookForm } from "../components/forms/create-flipbook-form";
 import { ErrorState } from "../components/ui/loading";
 import { Plus } from "lucide-react";
 import type { Flipbook } from "@/lib/types";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 // Transform backend data to table format
 const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => ({
@@ -81,12 +82,13 @@ export default function ManageFlipbooks() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 cursor-pointer">
               <Plus size={16} />
               Create New Flipbook
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-xs sm:max-w-md max-h-[70vh] overflow-y-hidden p-4 gap-2">
+            <DialogTitle className="text-base">Create New Flipbook</DialogTitle>
             <CreateFlipbookForm
               onSuccess={handleCreateSuccess}
               onCancel={handleCreateCancel}
@@ -95,7 +97,7 @@ export default function ManageFlipbooks() {
         </Dialog>
       </div>
 
-      <div className="flex-grow bg-card rounded-lg">
+      <div className="flex-grow rounded-lg">
         <DataTable
           data={tableData}
           columns={columns}

@@ -159,7 +159,7 @@ export function DataTable<T>({
                         data-state={
                           row.getIsExpanded() ? "selected" : undefined
                         }
-                        className={`data-[state=selected]:bg-gray-light data-[state=selected]:border-0 hover:bg-gray-light transition-colors duration-200`}
+                        className={`data-[state=selected]:bg-gray-light data-[state=selected]:border-0 hover:bg-[#323232] transition-colors duration-200`}
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell

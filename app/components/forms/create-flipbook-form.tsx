@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -112,10 +111,10 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onRemove: () => void;
   }) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-sm">{label}</Label>
       {file ? (
-        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+        <div className="flex items-center justify-between p-2 bg-muted rounded-md">
           <div className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span className="text-sm font-medium">{file.name}</span>
@@ -126,16 +125,16 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+      size="sm"
             onClick={onRemove}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       ) : (
-        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-          <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-          <div className="mt-2">
+  <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-3 text-center h-15 mx-auto flex flex-col items-center justify-center">
+          <Upload className="mx-auto h-5 w-3 text-muted-foreground" />
+          <div className="mt-1.5">
             <Label
               htmlFor={`${label.toLowerCase()}-upload`}
               className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80"
@@ -150,33 +149,30 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
               className="hidden"
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-[11px] text-muted-foreground mt-1">
             {accept.includes('pdf') ? 'PDF files only' : 'PNG, JPG, GIF up to 10MB'}
           </p>
         </div>
       )}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>Create New Flipbook</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="w-full max-w-sm mx-auto">
+    
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Flipbook Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Flipbook Name</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-sm">Flipbook Name</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter flipbook name"
-              className={errors.name ? "border-destructive" : ""}
+        className={`${errors.name ? "border-destructive" : ""} h-9 text-sm`}
             />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
           </div>
 
           {/* PDF Upload */}
@@ -206,14 +202,16 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
               checked={formData.isPublished}
               onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, isPublished: checked }))}
             />
-            <Label htmlFor="publish">Publish immediately</Label>
+            <Label htmlFor="publish" className="text-sm">Publish immediately</Label>
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-2 pt-1.5">
             <Button
               type="button"
               variant="outline"
+              size="sm"
+              className="cursor-pointer"
               onClick={onCancel}
               disabled={createFlipbook.isPending}
             >
@@ -221,6 +219,8 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
             </Button>
             <Button
               type="submit"
+              size="sm"
+              className="cursor-pointer"
               disabled={createFlipbook.isPending}
             >
               {createFlipbook.isPending ? (
@@ -233,8 +233,7 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
               )}
             </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+  </form>
+  </div>
   );
 }

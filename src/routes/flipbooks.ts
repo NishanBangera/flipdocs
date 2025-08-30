@@ -8,7 +8,6 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
   // Get all flipbooks for user
   .get('/', async (ctx) => {
     const { user } = ctx as any;
-    
     if (!user) {
       return { error: 'Unauthorized' };
     }
@@ -42,13 +41,14 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
 
   // Create new flipbook
   .post('/', async (ctx) => {
+    console.log('Creating flipbook2222:');
     const { user, body } = ctx as any;
-    
     if (!user) {
       return { error: 'Unauthorized' };
     }
 
     try {
+      console.log('Creating flipbook:', body);
       const flipbook = await FlipbookService.create(user.id, body);
       return { data: flipbook };
     } catch (error) {
@@ -59,7 +59,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
       name: t.String(),
       pdf: t.File(),
       backgroundImage: t.Optional(t.File()),
-      isPublished: t.Boolean()
+      isPublished: t.String()
     })
   })
 

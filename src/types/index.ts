@@ -14,7 +14,7 @@ export interface Flipbook {
   slug: string;
   pdf_url: string;
   background_image_url?: string;
-  is_published: boolean;
+  is_published: string;
   created_at: Date;
   updated_at: Date;
 }

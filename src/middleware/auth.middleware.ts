@@ -3,16 +3,16 @@ import { clerk } from '../config/clerk';
 import { supabase } from '../config/supabase';
 import { verifyToken } from '@clerk/backend';
 
-export const authMiddleware = new Elysia()
-  .derive(async ({ headers, set }) => {
+// Export a plugin function so it can be used with `.use(authMiddleware)`
+// This ensures the derive hook is registered onto the app instance passed to .use
+export const authMiddleware = (app: Elysia) =>
+  app.derive(async ({ headers, set }) => {
     try {
       const token = headers.authorization?.replace('Bearer ', '');
-      
       if (!token) {
         set.status = 401;
         return { user: null, error: 'No token provided' };
       }
-
       // Verify the token with Clerk
       const sessionToken = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY!
@@ -51,10 +51,11 @@ export const authMiddleware = new Elysia()
           
         user = newUser;
       }
-
+      console.log('Authenticated user:', user);
       return { user };
     } catch (error) {
+      console.log('Authentication error:', error);
       set.status = 401;
-      return { user: null, error: 'Authentication failed' };
+      return { user: null, error: error };
     }
   });

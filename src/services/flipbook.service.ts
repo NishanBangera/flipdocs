@@ -6,6 +6,7 @@ import { Flipbook, CreateFlipbookDTO, UpdateFlipbookDTO } from '../types';
 export class FlipbookService {
   static async create(userId: string, data: CreateFlipbookDTO): Promise<Flipbook> {
     // Generate unique slug
+    console.log("checkkkkkkkk233333333")
     const slug = await generateUniqueSlug(data.name);
 
     // Upload PDF
@@ -131,9 +132,9 @@ export class FlipbookService {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-
+    console.log('getAll flipbooks data:', data);
     if (error) throw error;
-
+    
     return data || [];
   }
 

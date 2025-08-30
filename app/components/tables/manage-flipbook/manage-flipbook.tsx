@@ -1,21 +1,24 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Share } from "lucide-react";
-import { ArrowsSort, Filter, Flag, Trash, Book2 } from "tabler-icons-react";
+import { Share, Trash, BookOpen, Eye, EyeOff } from "lucide-react";
+import { ArrowsSort, Filter } from "tabler-icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { copyToClipboard } from "@/lib/utils/toast";
+import type { FlipbookTableItem } from "@/lib/types";
 
 dayjs.extend(relativeTime);
 
-// Define the book data structure
-export interface Book {
-  name: string;
-  slug: string;
-  status: "published" | "unpublished";
-  createdAt: string; // e.g. "Jan 05 23"
-}
+// Export the interface for use in other components
+export type { FlipbookTableItem };
 
-export function useBooksColumns(): ColumnDef<Book>[] {
+// Define column configuration without hooks
+export function createBooksColumns(
+  togglePublish: (id: string) => void,
+  deleteFlipbook: (id: string) => void,
+  isToggleLoading: (id: string) => boolean,
+  isDeleteLoading: (id: string) => boolean
+): ColumnDef<FlipbookTableItem>[] {
   return [
     {
       accessorKey: "name",
@@ -74,7 +77,7 @@ export function useBooksColumns(): ColumnDef<Book>[] {
       ),
       cell: ({ row }) => {
         const createdAtStr = row.getValue("createdAt") as string;
-        const parsed = dayjs(createdAtStr, "MMM DD YY");
+        const parsed = dayjs(createdAtStr);
         return (
           <div className="flex flex-col">
             <span className="text-sm">{parsed.fromNow()}</span>
@@ -88,37 +91,81 @@ export function useBooksColumns(): ColumnDef<Book>[] {
     {
       id: "actions",
       header: "Actions",
-      cell: () => {
+      cell: ({ row }) => {
+        const flipbook = row.original;
+        const isPublished = flipbook.status === "published";
+
+        const handleTogglePublish = () => {
+          togglePublish(flipbook.id);
+        };
+
+        const handleDelete = () => {
+          if (window.confirm(`Are you sure you want to delete "${flipbook.name}"?`)) {
+            deleteFlipbook(flipbook.id);
+          }
+        };
+
+        const handleView = () => {
+          if (flipbook.pdf_url) {
+            window.open(flipbook.pdf_url, '_blank');
+          }
+        };
+
+        const handleShare = () => {
+          if (isPublished) {
+            const shareUrl = `${window.location.origin}/view/${flipbook.slug}`;
+            copyToClipboard(shareUrl, 'Share link copied to clipboard!');
+          }
+        };
+
         return (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 p-0 cursor-pointer"
+              onClick={handleView}
+              title="View PDF"
             >
-              <span className="sr-only">View Details</span>
-              <Book2 className="h-4 w-4" />
+              <span className="sr-only">View PDF</span>
+              <BookOpen className="h-4 w-4" />
             </Button>
+            
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 p-0 cursor-pointer"
+              onClick={handleTogglePublish}
+              disabled={isToggleLoading(flipbook.id)}
+              title={isPublished ? "Unpublish" : "Publish"}
             >
-              <span className="sr-only">Flag</span>
-              <Flag className="h-4 w-4" />
+              <span className="sr-only">{isPublished ? "Unpublish" : "Publish"}</span>
+              {isPublished ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </Button>
+            
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 p-0 cursor-pointer"
+              onClick={handleShare}
+              disabled={!isPublished}
+              title={isPublished ? "Copy share link" : "Publish to share"}
             >
               <span className="sr-only">Share</span>
               <Share className="h-4 w-4" />
             </Button>
+            
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0 cursor-pointer"
+              className="h-8 w-8 p-0 cursor-pointer text-destructive"
+              onClick={handleDelete}
+              disabled={isDeleteLoading(flipbook.id)}
+              title="Delete flipbook"
             >
               <span className="sr-only">Delete</span>
               <Trash className="h-4 w-4" />
@@ -129,5 +176,3 @@ export function useBooksColumns(): ColumnDef<Book>[] {
     },
   ];
 }
-
-export default useBooksColumns;

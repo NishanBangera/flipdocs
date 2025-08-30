@@ -4,6 +4,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { flipbookRoutes, publicFlipbookRoutes } from './routes/flipbooks';
 import { dashboardRoutes } from './routes/dashboard';
+import { userRoutes } from './routes/user';
 
 const app = new Elysia()
   .use(cors({
@@ -20,6 +21,7 @@ const app = new Elysia()
   }))
   .get('/', () => 'Flipbook API is running!')
   .use(dashboardRoutes)
+  .use(userRoutes)
   .use(flipbookRoutes)
   .use(publicFlipbookRoutes)
   .listen(process.env.PORT || 3000);

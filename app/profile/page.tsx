@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator";
 import { useProfileApi } from "@/lib/hooks/use-profile";
 import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useUser } from "@clerk/nextjs";
@@ -160,8 +160,6 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-
-      <Separator className="my-2" />
 
       <Card>
         <CardHeader>

@@ -33,8 +33,8 @@ function Sidebar() {
         }
     ];
     return (
-        <div className="relative h-full">
-            <div className="px-2 h-full flex flex-col justify-between pb-2">
+        <div className="relative h-full w-full">
+            <div className="px-3 h-full flex flex-col justify-between pb-2">
                 <div>
                     <div className="py-6 flex items-center justify-center">
                         <div className="flex flex-row items-center gap-2 w-4/5">

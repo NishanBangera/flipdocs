@@ -1,5 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Trash, Pencil, Copy,CircleCheck, CircleX } from "lucide-react";
 import { ArrowsSort, Filter } from "tabler-icons-react";
 import dayjs from "dayjs";
@@ -64,30 +65,29 @@ export function createBooksColumns(
 
         return (
           <div
-            className={`inline-flex w-32 items-center justify-between rounded-full px-3 pr-2 py-1 text-xs font-medium text-center ${
-              isPublished ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+            className={`inline-flex items-center gap-3 rounded-lg px-4 py-3 border-2 transition-all duration-200 ${
+              isPublished 
+                ? "bg-green-100 border-green-300 text-green-800" 
+                : "bg-orange-100 border-orange-300 text-orange-800"
             }`}
           >
-            <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-6 w-6 hover:bg-transparent! transition-all duration-200 ${
-                isPublished 
-                  ? 'hover:text-green-800 hover:drop-shadow-lg hover:scale-110' 
-                  : 'hover:text-red-800 hover:drop-shadow-lg hover:scale-110'
-              }`}
-              onClick={handleTogglePublish}
+            {/* Shadcn Switch Component */}
+            <Switch
+              checked={isPublished}
+              onCheckedChange={handleTogglePublish}
               disabled={isToggleLoading(flipbook.id)}
+              className={`${
+                isPublished
+                  ? "data-[state=checked]:bg-green-500"
+                  : "data-[state=unchecked]:bg-gray-300"
+              }`}
               title={isPublished ? "Unpublish" : "Publish"}
-            >
-              <span className="sr-only">{isPublished ? "Unpublish" : "Publish"}</span>
-              {isPublished ? (
-                <CircleCheck className="h-3.5 w-3.5" />
-              ) : (
-                <CircleX className="h-3.5 w-3.5" />
-              )}
-            </Button>
+            />
+            
+            {/* Status Text */}
+            <span className="font-semibold text-sm">
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </span>
           </div>
         );
       },

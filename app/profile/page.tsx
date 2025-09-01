@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { useProfileApi } from "@/lib/hooks/use-profile";
 import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useUser } from "@clerk/nextjs";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export default function ProfilePage() {
   const api = useProfileApi();
@@ -71,7 +78,7 @@ export default function ProfilePage() {
 
   const onChangePassword = async () => {
     if ((!user?.passwordEnabled && (!newPassword || !confirmPassword)) ||
-        (user?.passwordEnabled && (!currentPassword || !newPassword || !confirmPassword))) {
+      (user?.passwordEnabled && (!currentPassword || !newPassword || !confirmPassword))) {
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -99,7 +106,7 @@ export default function ProfilePage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-  setIsPwdOpen(false);
+      setIsPwdOpen(false);
       showSuccessToast("Password updated");
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to update password';
@@ -110,10 +117,16 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Profile</h1>
-        <p className="text-sm opacity-80">Manage your account settings and preferences</p>
+    <div className="space-y-6">
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>Profile</BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+      <div className="mb-4">
+        <p className="text-sm text-muted-foreground">Manage your account settings and preferences</p>
       </div>
 
       <Card>

@@ -2,20 +2,17 @@
 import AppSidebar from "../sidebar/sidebar";
 import { 
   SidebarProvider, 
-  SidebarTrigger, 
   SidebarInset 
 } from "@/components/ui/sidebar";
+import { DynamicHeader } from "../layout/dynamic-header";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        {/* Header with trigger */}
-        <div className="flex items-center gap-2 p-4 border-b">
-          <SidebarTrigger className="-ml-1" />
-          <span className="font-semibold text-lg">Dashboard</span>
-        </div>
+        {/* Dynamic Header with breadcrumbs */}
+        <DynamicHeader />
 
         {/* Main content */}
         <div className="flex-1 overflow-auto p-4">

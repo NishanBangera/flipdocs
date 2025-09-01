@@ -7,18 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "../components/ui/loading";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-// import { Button } from "@/components/ui/button";
-// import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList } from "@/components/ui/breadcrumb";
 
 dayjs.extend(relativeTime);
 
-function StatCard({ 
-  title, 
-  value, 
-  description, 
-  icon: Icon, 
-  isLoading 
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  isLoading
 }: {
   title: string;
   value: number | string;
@@ -72,9 +71,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>Dashboard</BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome back! Here is an overview of your flipbooks.
         </p>

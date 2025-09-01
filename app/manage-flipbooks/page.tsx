@@ -11,6 +11,13 @@ import { Plus } from "lucide-react";
 import type { Flipbook } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // Transform backend data to table format
 const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => ({
@@ -51,12 +58,25 @@ export default function ManageFlipbooks() {
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Manage Flipbooks</h1>
-            <p className="text-sm opacity-80">Manage your flipbook collection</p>
-          </div>
+      <div>
+        <div className="mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>Manage Flipbooks</BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="flex items-center justify-end mb-6">
+          <Button asChild className="flex items-center gap-2 cursor-pointer">
+            <Link href="/manage-flipbooks/create">
+              <Plus size={16} />
+              Create New Flipbook
+            </Link>
+          </Button>
         </div>
         <ErrorState
           message={error.message || "Failed to load flipbooks"}
@@ -67,12 +87,13 @@ export default function ManageFlipbooks() {
   }
 
   return (
-    <div className="p-6 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Manage Flipbooks</h1>
-          <p className="text-sm opacity-80">Manage your flipbook collection</p>
-        </div>
+    <div className="flex flex-col gap-4 h-full">
+      <div className="flex justify-between items-center">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>Manage Flipbooks</BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <Button asChild className="flex items-center gap-2 cursor-pointer">
           <Link href="/manage-flipbooks/create">
             <Plus size={16} />
@@ -80,7 +101,6 @@ export default function ManageFlipbooks() {
           </Link>
         </Button>
       </div>
-
       <div className="flex-grow rounded-lg">
         <DataTable
           data={tableData}

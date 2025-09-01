@@ -96,7 +96,7 @@ export default function ManageFlipbooks() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 cursor-pointer">
+            <Button className="flex items-center gap-2">
               <Plus size={16} />
               Create New Flipbook
             </Button>

@@ -140,7 +140,7 @@ export function createBooksColumns(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0 cursor-pointer"
+              className="h-8 w-8 p-0"
               onClick={() => openEdit(flipbook)}
               title="Edit flipbook"
             >
@@ -161,7 +161,7 @@ export function createBooksColumns(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0 cursor-pointer"
+              className="h-8 w-8 p-0"
               onClick={handleShare}
               disabled={!isPublished}
               title={isPublished ? "Copy share link" : "Publish to share"}
@@ -173,7 +173,7 @@ export function createBooksColumns(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0 cursor-pointer text-destructive"
+              className="h-8 w-8 p-0 text-destructive"
               onClick={handleDelete}
               disabled={isDeleteLoading(flipbook.id)}
               title="Delete flipbook"

@@ -211,7 +211,6 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
               type="button"
               variant="outline"
               size="sm"
-              className="cursor-pointer"
               onClick={onCancel}
               disabled={createFlipbook.isPending}
             >
@@ -220,7 +219,6 @@ export function CreateFlipbookForm({ onSuccess, onCancel }: CreateFlipbookFormPr
             <Button
               type="submit"
               size="sm"
-              className="cursor-pointer"
               disabled={createFlipbook.isPending}
             >
               {createFlipbook.isPending ? (

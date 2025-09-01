@@ -79,7 +79,7 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
             <span className="text-sm font-medium">{file.name}</span>
             <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
           </div>
-          <Button type="button" variant="ghost" size="sm" className="cursor-pointer" onClick={() => onChange(null)}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -119,10 +119,10 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
         </div>
 
         <div className="flex justify-end space-x-2 pt-1.5">
-          <Button type="button" variant="outline" size="sm" className="cursor-pointer" onClick={onCancel} disabled={updateFlipbook.isPending}>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={updateFlipbook.isPending}>
             Cancel
           </Button>
-          <Button type="submit" size="sm" className="cursor-pointer" disabled={updateFlipbook.isPending}>
+          <Button type="submit" size="sm" disabled={updateFlipbook.isPending}>
             {updateFlipbook.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

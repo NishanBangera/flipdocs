@@ -5,14 +5,15 @@ import { IconLogout } from "@tabler/icons-react";
 import { CircleUser } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
-import { Separator } from "@/components/ui/separator";
 import { useClerk, useUser } from "@clerk/nextjs";
+import { useSidebar } from "@/components/ui/sidebar";
 
 function UserDetailsCard() {
   const { user, isSignedIn, isLoaded } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { state } = useSidebar();
 
   const displayName =
     (user?.firstName && user.firstName.trim()) ||
@@ -43,27 +44,45 @@ function UserDetailsCard() {
   if (!isLoaded) {
     return (
       <div className="w-full">
-        <Separator className="bg-gray-medium mb-2" />
-        <div className="flex items-center justify-between w-full overflow-hidden">
+        <div className={`flex items-center ${state === "collapsed" ? "justify-center" : "justify-between"} w-full overflow-hidden`}>
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
-            <div className="w-20 h-4 bg-muted animate-pulse rounded" />
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+            {state === "expanded" && <div className="w-20 h-4 bg-muted animate-pulse rounded" />}
           </div>
         </div>
       </div>
     );
   }
 
+  if (state === "collapsed") {
+    return (
+      <div className="w-full flex justify-center">
+        <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          aria-label="Sign out"
+          className={`cursor-pointer hover:bg-accent rounded-md p-2 transition-colors ${
+            isLoggingOut ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
+          <Avatar className="w-8 h-8">
+            <AvatarImage src={user?.imageUrl || ""} alt={displayName} />
+            <AvatarFallback className="text-xs">{avatarFallback || <CircleUser size={16} />}</AvatarFallback>
+          </Avatar>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      <Separator className="bg-gray-medium mb-2" />
       <div className="flex items-center justify-between w-full overflow-hidden">
         <div className="flex items-center space-x-2">
-          <Avatar>
+          <Avatar className="w-8 h-8">
             <AvatarImage src={user?.imageUrl || ""} alt={displayName} />
-            <AvatarFallback>{avatarFallback || <CircleUser />}</AvatarFallback>
+            <AvatarFallback className="text-sm">{avatarFallback || <CircleUser size={16} />}</AvatarFallback>
           </Avatar>
-          <div className="text-base font-medium">
+          <div className="text-sm font-medium">
             {isSignedIn ? displayName : "User"}
           </div>
         </div>
@@ -76,7 +95,7 @@ function UserDetailsCard() {
             isLoggingOut ? "opacity-50 pointer-events-none" : ""
           }`}
         >
-          <IconLogout size={18} />
+          <IconLogout size={16} />
         </button>
       </div>
     </div>

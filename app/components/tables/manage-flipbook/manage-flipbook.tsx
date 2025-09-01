@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Share, Trash, BookOpen, Eye, EyeOff, Pencil } from "lucide-react";
+import { Trash, Pencil, Copy,CircleCheck, CircleX } from "lucide-react";
 import { ArrowsSort, Filter } from "tabler-icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -55,15 +55,35 @@ export function createBooksColumns(
       ),
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
+        const flipbook = row.original;
+        const isPublished = status === "published";
+
+        const handleTogglePublish = () => {
+          togglePublish(flipbook.id);
+        };
+
         return (
           <div
-            className={`inline-flex w-28 items-center justify-center rounded-full px-2 py-1 text-xs font-medium text-center ${
-              status === "published"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
+            className={`inline-flex w-28 items-center justify-center gap-2 rounded-full px-2 py-1 text-xs font-medium text-center ${
+              isPublished ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0"
+              onClick={handleTogglePublish}
+              disabled={isToggleLoading(flipbook.id)}
+              title={isPublished ? "Unpublish" : "Publish"}
+            >
+              <span className="sr-only">{isPublished ? "Unpublish" : "Publish"}</span>
+              {isPublished ? (
+                <CircleCheck className="h-3.5 w-3.5" />
+              ) : (
+                <CircleX className="h-3.5 w-3.5" />
+              )}
+            </Button>
           </div>
         );
       },
@@ -96,21 +116,17 @@ export function createBooksColumns(
         const flipbook = row.original;
         const isPublished = flipbook.status === "published";
 
-        const handleTogglePublish = () => {
-          togglePublish(flipbook.id);
-        };
-
         const handleDelete = () => {
           if (window.confirm(`Are you sure you want to delete "${flipbook.name}"?`)) {
             deleteFlipbook(flipbook.id);
           }
         };
 
-        const handleView = () => {
-          if (flipbook.pdf_url) {
-            window.open(flipbook.pdf_url, '_blank');
-          }
-        };
+        // const handleView = () => {
+        //   if (flipbook.pdf_url) {
+        //     window.open(flipbook.pdf_url, '_blank');
+        //   }
+        // };
 
         const handleShare = () => {
           if (isPublished) {
@@ -131,7 +147,7 @@ export function createBooksColumns(
               <span className="sr-only">Edit</span>
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button
+            {/* <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 p-0 cursor-pointer"
@@ -140,23 +156,7 @@ export function createBooksColumns(
             >
               <span className="sr-only">View PDF</span>
               <BookOpen className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0 cursor-pointer"
-              onClick={handleTogglePublish}
-              disabled={isToggleLoading(flipbook.id)}
-              title={isPublished ? "Unpublish" : "Publish"}
-            >
-              <span className="sr-only">{isPublished ? "Unpublish" : "Publish"}</span>
-              {isPublished ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </Button>
+            </Button> */}
             
             <Button
               variant="ghost"
@@ -167,7 +167,7 @@ export function createBooksColumns(
               title={isPublished ? "Copy share link" : "Publish to share"}
             >
               <span className="sr-only">Share</span>
-              <Share className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             </Button>
             
             <Button

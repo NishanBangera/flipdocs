@@ -27,10 +27,10 @@ export interface UpdateFlipbookData {
 }
 
 export interface DashboardStats {
-  total: number;
-  published: number;
-  unpublished: number;
-  recent: Flipbook[];
+  totalFlipbooks: number;
+  publishedFlipbooks: number;
+  unpublishedFlipbooks: number;
+  // recent: Flipbook[];
 }
 
 export interface ApiResponse<T> {

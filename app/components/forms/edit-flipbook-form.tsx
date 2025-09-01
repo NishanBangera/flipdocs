@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -63,12 +64,14 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
     file,
     onChange,
     error,
+    existingUrl,
   }: {
     label: string;
     accept: string;
     file: File | null;
     onChange: (f: File | null) => void;
     error?: string;
+    existingUrl?: string;
   }) => (
     <div className="space-y-1.5">
       <Label className="text-sm">{label}</Label>
@@ -84,17 +87,48 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
           </Button>
         </div>
       ) : (
-        <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-3 text-center h-15 mx-auto flex flex-col items-center justify-center">
-          <Upload className="mx-auto h-5 w-3 text-muted-foreground" />
-          <div className="mt-1.5">
-            <Label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80">
-              Click to upload {label.toLowerCase()}
-            </Label>
-            <Input id={`${label.toLowerCase()}-upload`} type="file" accept={accept} className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+        <div className="space-y-2">
+          {existingUrl ? (
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <div className="flex items-center space-x-2">
+                {accept.includes("image") ? (
+                  // image preview
+                  <Image
+                    src={existingUrl}
+                    alt="Current background"
+                    width={64}
+                    height={40}
+                    unoptimized
+                    className="h-10 w-16 object-cover rounded border"
+                  />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                <span className="text-sm font-medium">Current file</span>
+              </div>
+              <a
+                href={existingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs underline text-muted-foreground"
+              >
+                View
+              </a>
+            </div>
+          ) : null}
+
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-3 text-center h-15 mx-auto flex flex-col items-center justify-center">
+            <Upload className="mx-auto h-5 w-3 text-muted-foreground" />
+            <div className="mt-1.5">
+              <Label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80">
+                Click to {label.toLowerCase()}
+              </Label>
+              <Input id={`${label.toLowerCase()}-upload`} type="file" accept={accept} className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {accept.includes('pdf') ? 'PDF files only' : 'PNG, JPG, GIF up to 10MB'}
+            </p>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            {accept.includes('pdf') ? 'PDF files only' : 'PNG, JPG, GIF up to 10MB'}
-          </p>
         </div>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -110,8 +144,8 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
           {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
 
-        <FileUpload label="Replace PDF" accept=".pdf" file={pdfFile} onChange={setPdfFile} error={errors.pdf} />
-        <FileUpload label="Replace Background (Optional)" accept="image/*" file={backgroundFile} onChange={setBackgroundFile} error={errors.background} />
+  <FileUpload label="Replace PDF" accept=".pdf" file={pdfFile} onChange={setPdfFile} error={errors.pdf} existingUrl={flipbook.pdf_url} />
+  <FileUpload label="Replace Background (Optional)" accept="image/*" file={backgroundFile} onChange={setBackgroundFile} error={errors.background} existingUrl={flipbook.background_image_url} />
 
         <div className="flex items-center space-x-2">
           <Switch id="publish" checked={isPublished} onCheckedChange={setIsPublished} />

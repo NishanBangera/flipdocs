@@ -2,7 +2,7 @@
 
 import { useDashboardStats } from "@/lib/hooks/use-flipbooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Eye, EyeOff } from "lucide-react";
+import { BookOpen, CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "../components/ui/loading";
 import dayjs from "dayjs";
@@ -93,14 +93,14 @@ export default function DashboardPage() {
           title="Published"
           value={stats?.publishedFlipbooks ?? 0}
           description="Live flipbooks"
-          icon={Eye}
+          icon={CircleCheck}
           isLoading={isLoading}
         />
         <StatCard
           title="Unpublished"
           value={stats?.unpublishedFlipbooks ?? 0}
           description="Draft flipbooks"
-          icon={EyeOff}
+          icon={CircleX}
           isLoading={isLoading}
         />
         {/* <StatCard

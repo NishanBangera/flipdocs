@@ -32,6 +32,7 @@ export default function ProfilePage() {
     (async () => {
       try {
         const me = await api.getMe();
+        console.log("Fetched profile:", me);
         const nm = me.name || "";
         const em = me.email;
         setName(nm);

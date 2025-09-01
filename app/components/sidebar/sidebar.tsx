@@ -52,7 +52,7 @@ function AppSidebar() {
     return (
         <Sidebar collapsible="icon" className="h-full">
             <SidebarHeader className={`${isCollapsed ? 'px-2 py-4' : 'px-4 py-6'}`}>
-                <div className="flex items-center justify-center">
+                <div className="flex items-center">
                     {isCollapsed ? (
                         <Book size={24} className="text-primary" />
                     ) : (

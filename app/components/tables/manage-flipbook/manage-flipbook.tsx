@@ -64,15 +64,19 @@ export function createBooksColumns(
 
         return (
           <div
-            className={`inline-flex w-28 items-center justify-center gap-2 rounded-full px-2 py-1 text-xs font-medium text-center ${
-              isPublished ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            className={`inline-flex w-32 items-center justify-between rounded-full px-3 pr-2 py-1 text-xs font-medium text-center ${
+              isPublished ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
             }`}
           >
             <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 p-0"
+              className={`h-6 w-6 hover:bg-transparent! transition-all duration-200 ${
+                isPublished 
+                  ? 'hover:text-green-800 hover:drop-shadow-lg hover:scale-110' 
+                  : 'hover:text-red-800 hover:drop-shadow-lg hover:scale-110'
+              }`}
               onClick={handleTogglePublish}
               disabled={isToggleLoading(flipbook.id)}
               title={isPublished ? "Unpublish" : "Publish"}

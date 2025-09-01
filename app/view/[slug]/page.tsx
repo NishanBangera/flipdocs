@@ -57,7 +57,8 @@ export default function ViewFlipbookPage({ params }: ViewFlipbookPageProps) {
   return (
     <FlipbookProviders>
       <div 
-        className="flipbook-viewer w-full h-screen bg-black bg-cover bg-center bg-no-repeat"
+        data-route="view"
+        className="fixed inset-0 w-full h-full bg-black bg-cover bg-center bg-no-repeat overflow-hidden"
         style={{ backgroundImage: 'url(/flipbook/textures/background.jpg)' }}
       >
         <Suspense fallback={

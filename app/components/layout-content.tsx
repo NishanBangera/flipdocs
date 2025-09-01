@@ -7,12 +7,18 @@ import { LoadingSpinner } from "./ui/loading";
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/sign-in', '/sign-up'];
+// Routes that should render without AppShell (full-screen experience)
+const FULLSCREEN_ROUTES = ['/view'];
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
 
   const isPublicRoute = PUBLIC_ROUTES.some(route => 
+    pathname.startsWith(route)
+  );
+
+  const isFullscreenRoute = FULLSCREEN_ROUTES.some(route => 
     pathname.startsWith(route)
   );
 
@@ -32,6 +38,11 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         {children}
       </div>
     );
+  }
+
+  // For fullscreen routes (view), render without AppShell but allow full access
+  if (isFullscreenRoute) {
+    return <>{children}</>;
   }
 
   // For authenticated users, render with AppShell

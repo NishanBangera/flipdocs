@@ -133,7 +133,7 @@ export class FlipbookApi {
     try {
       const response = await this.apiClient.get<ApiResponse<DashboardStats>>('/dashboard/stats');
       console.log("Dashboard stats response:", response.data);
-      return response.data.data || { total: 0, published: 0, unpublished: 0, recent: [] };
+      return response.data.data || { totalFlipbooks: 0, publishedFlipbooks: 0, unpublishedFlipbooks: 0 };
     } catch (error) {
       throw new Error(handleApiError(error));
     }

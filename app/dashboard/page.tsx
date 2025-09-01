@@ -81,39 +81,39 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Flipbooks"
-          value={stats?.total ?? 0}
+          value={stats?.totalFlipbooks ?? 0}
           description="All your flipbooks"
           icon={BookOpen}
           isLoading={isLoading}
         />
         <StatCard
           title="Published"
-          value={stats?.published ?? 0}
+          value={stats?.publishedFlipbooks ?? 0}
           description="Live flipbooks"
           icon={Eye}
           isLoading={isLoading}
         />
         <StatCard
           title="Unpublished"
-          value={stats?.unpublished ?? 0}
+          value={stats?.unpublishedFlipbooks ?? 0}
           description="Draft flipbooks"
           icon={EyeOff}
           isLoading={isLoading}
         />
-        <StatCard
+        {/* <StatCard
           title="Recent Activity"
           value={stats?.recent?.length ?? 0}
           description="Recent uploads"
           icon={Clock}
           isLoading={isLoading}
-        />
+        /> */}
       </div>
 
       {/* Recent Flipbooks */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Recent Flipbooks</CardTitle>
           <CardDescription>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

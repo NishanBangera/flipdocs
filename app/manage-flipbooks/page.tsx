@@ -6,13 +6,11 @@ import { createBooksColumns } from "../components/tables/manage-flipbook/manage-
 import type { FlipbookTableItem } from "../components/tables/manage-flipbook/manage-flipbook";
 import { useFlipbooks, useTogglePublish, useDeleteFlipbook } from "@/lib/hooks/use-flipbooks";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { CreateFlipbookForm } from "../components/forms/create-flipbook-form";
-import { EditFlipbookForm } from "../components/forms/edit-flipbook-form";
 import { ErrorState } from "../components/ui/loading";
 import { Plus } from "lucide-react";
 import type { Flipbook } from "@/lib/types";
-import { DialogTitle } from "@radix-ui/react-dialog";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // Transform backend data to table format
 const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => ({
@@ -27,11 +25,9 @@ const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => 
 
 export default function ManageFlipbooks() {
   const [currentPage, setCurrentPage] = useState(0);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<FlipbookTableItem | null>(null);
   const { data: flipbooks = [], isLoading, error, refetch } = useFlipbooks();
   console.log("Fetched flipbooks12222222:", flipbooks);
+  const router = useRouter();
   
   // Get React Query hooks for table actions
   const togglePublish = useTogglePublish();
@@ -44,31 +40,14 @@ export default function ManageFlipbooks() {
       (id: string) => deleteFlipbook.mutate(id),
       (id: string) => togglePublish.isPending && togglePublish.variables === id,
       (id: string) => deleteFlipbook.isPending && deleteFlipbook.variables === id,
-      (fb) => { setEditing(fb); setIsEditDialogOpen(true); }
+    (fb) => { router.push(`/manage-flipbooks/${fb.id}/edit`); }
     );
-  }, [togglePublish, deleteFlipbook]);
+  }, [togglePublish, deleteFlipbook, router]);
 
   // Transform data for table display
   const tableData = flipbooks.map(transformFlipbookToTableItem);
   console.log("Table Dataaaaa:", tableData);
-  const handleCreateSuccess = () => {
-    setIsCreateDialogOpen(false);
-    // Data will be automatically refetched due to React Query invalidation
-  };
-
-  const handleCreateCancel = () => {
-    setIsCreateDialogOpen(false);
-  };
-
-  const handleEditSuccess = () => {
-    setIsEditDialogOpen(false);
-    setEditing(null);
-  };
-
-  const handleEditCancel = () => {
-    setIsEditDialogOpen(false);
-    setEditing(null);
-  };
+  // Creation and editing now handled on dedicated pages
 
   if (error) {
     return (
@@ -94,21 +73,12 @@ export default function ManageFlipbooks() {
           <h1 className="text-2xl font-semibold">Manage Flipbooks</h1>
           <p className="text-sm opacity-80">Manage your flipbook collection</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 cursor-pointer">
-              <Plus size={16} />
-              Create New Flipbook
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xs sm:max-w-md max-h-[70vh] overflow-y-hidden p-4 gap-2">
-            <DialogTitle className="text-base">Create New Flipbook</DialogTitle>
-            <CreateFlipbookForm
-              onSuccess={handleCreateSuccess}
-              onCancel={handleCreateCancel}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button asChild className="flex items-center gap-2 cursor-pointer">
+          <Link href="/manage-flipbooks/create">
+            <Plus size={16} />
+            Create New Flipbook
+          </Link>
+        </Button>
       </div>
 
       <div className="flex-grow rounded-lg">
@@ -120,19 +90,6 @@ export default function ManageFlipbooks() {
           setCurrentPage={setCurrentPage}
         />
       </div>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={(o) => { if(!o){ setEditing(null);} setIsEditDialogOpen(o); }}>
-        <DialogContent className="max-w-xs sm:max-w-md max-h-[70vh] overflow-y-hidden p-4 gap-2">
-          <DialogTitle className="text-base">Edit Flipbook</DialogTitle>
-          {editing && (
-            <EditFlipbookForm
-              flipbook={editing}
-              onSuccess={handleEditSuccess}
-              onCancel={handleEditCancel}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

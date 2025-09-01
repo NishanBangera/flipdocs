@@ -1,4 +1,3 @@
-"use client";
 
 import AppSidebar from "../sidebar/sidebar";
 import { RootProvider } from "./root-provider";

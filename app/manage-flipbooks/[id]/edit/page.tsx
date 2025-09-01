@@ -2,8 +2,9 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFlipbook } from "@/lib/hooks/use-flipbooks";
-import { EditFlipbookForm } from "../../../components/forms/edit-flipbook-form";
+import EditFlipbookScreen from "../../../components/forms/edit-flipbook-screen";
 import { ErrorState, LoadingState } from "../../../components/ui/loading";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 export default function EditFlipbookPage() {
   const params = useParams<{ id: string }>();
@@ -13,12 +14,21 @@ export default function EditFlipbookPage() {
   const { data: flipbook, isLoading, error, refetch } = useFlipbook(id ?? "");
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Edit Flipbook</h1>
-          <p className="text-sm opacity-80">Update details or files for your flipbook.</p>
-        </div>
+    <main>
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/manage-flipbooks">Manage Flipbooks</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>Edit</BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
 
       {isLoading && <LoadingState message="Loading flipbook..." />}
@@ -26,20 +36,18 @@ export default function EditFlipbookPage() {
         <ErrorState message={error.message || "Failed to load flipbook"} onRetry={() => refetch()} />
       )}
       {!isLoading && !error && flipbook && (
-        <div className="rounded-lg border p-4">
-          <EditFlipbookForm
-            flipbook={{
-              id: flipbook.id,
-              name: flipbook.name,
-              status: flipbook.is_published ? "published" : "unpublished",
-              pdf_url: flipbook.pdf_url,
-              background_image_url: flipbook.background_image_url,
-            }}
-            onSuccess={() => router.replace("/manage-flipbooks")}
-            onCancel={() => router.push("/manage-flipbooks")}
-          />
-        </div>
+        <EditFlipbookScreen
+          flipbook={{
+            id: flipbook.id,
+            name: flipbook.name,
+            status: flipbook.is_published ? "published" : "unpublished",
+            pdf_url: flipbook.pdf_url,
+            background_image_url: flipbook.background_image_url,
+          }}
+          onSuccess={() => router.replace("/manage-flipbooks")}
+          onCancel={() => router.push("/manage-flipbooks")}
+        />
       )}
-    </div>
+    </main>
   );
 }

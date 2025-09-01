@@ -107,7 +107,7 @@ export function CreateFlipbookForm({
           />
         </div>
 
-        <ul className="grid gap-2 rounded-md bg-muted/30 p-3 text-xs text-muted-foreground">
+        {/* <ul className="grid gap-2 rounded-md bg-muted/30 p-3 text-xs text-muted-foreground">
           <li className="flex items-center gap-2">
             <Check className="h-3.5 w-3.5 text-emerald-500" />
             Use high-resolution PDFs for best quality.
@@ -116,7 +116,7 @@ export function CreateFlipbookForm({
             <Check className="h-3.5 w-3.5 text-emerald-500" />
             Add an optional background to personalize the cover.
           </li>
-        </ul>
+        </ul> */}
       </CardContent>
 
       <CardFooter className="flex justify-end gap-2">

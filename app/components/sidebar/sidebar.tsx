@@ -95,8 +95,8 @@ function AppSidebar() {
                 </SidebarMenu>
             </SidebarContent>
             
-            <SidebarSeparator className={`${isCollapsed ? 'mx-2' : 'mx-3'}`} />
-            
+            <SidebarSeparator className="mx-0" />
+        
             <SidebarFooter className={`${isCollapsed ? 'px-2 pb-2' : 'px-3 pb-2'}`}>
                 <UserDetailsCard />
             </SidebarFooter>

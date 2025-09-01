@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Upload, FileText, X, Loader2 } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileDropzone } from "../file-dropzone";
+import { BookOpen, Loader2, FileText } from "lucide-react";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { useUpdateFlipbook } from "@/lib/hooks/use-flipbooks";
 import type { UpdateFlipbookData } from "@/lib/types";
 
@@ -20,9 +23,14 @@ export interface EditFlipbookFormProps {
   };
   onSuccess?: () => void;
   onCancel?: () => void;
+  // Optional callbacks to sync preview in a wrapper screen
+  onNameChange?: (name: string) => void;
+  onPdfFileChange?: (file: File | null) => void;
+  onBackgroundFileChange?: (file: File | null) => void;
+  onIsPublishedChange?: (v: boolean) => void;
 }
 
-export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbookFormProps) {
+export function EditFlipbookForm({ flipbook, onSuccess, onCancel, onNameChange, onPdfFileChange, onBackgroundFileChange, onIsPublishedChange }: EditFlipbookFormProps) {
   const [name, setName] = useState(flipbook.name);
   const [isPublished, setIsPublished] = useState(flipbook.status === "published");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -58,117 +66,152 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel }: EditFlipbook
     }
   };
 
-  const FileUpload = ({
-    label,
-    accept,
-    file,
-    onChange,
-    error,
-    existingUrl,
-  }: {
-    label: string;
-    accept: string;
-    file: File | null;
-    onChange: (f: File | null) => void;
-    error?: string;
-    existingUrl?: string;
-  }) => (
-    <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      {file ? (
-        <div className="flex items-center justify-between p-2 bg-muted rounded-md">
-          <div className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span className="text-sm font-medium">{file.name}</span>
-            <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
+  const isReady = name.trim().length > 0;
+
+  const getFileNameFromUrl = (url?: string) => {
+    if (!url) return "";
+    try {
+      const u = new URL(url);
+      const last = u.pathname.split("/").pop() || url;
+      return decodeURIComponent(last);
+    } catch {
+      const last = url.split("/").pop() || url;
+      return decodeURIComponent(last);
+    }
+  };
+
+  return (
+    <Card className="border-muted/40">
+      <CardHeader className="space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500 text-black">
+            <BookOpen className="h-4 w-4" />
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
-            <X className="h-4 w-4" />
-          </Button>
+          <CardTitle className="text-lg">Flipbook details</CardTitle>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {existingUrl ? (
-            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
-              <div className="flex items-center space-x-2">
-                {accept.includes("image") ? (
-                  // image preview
+        <p className="text-sm text-muted-foreground">Keep names short and descriptive. PDF must be the final export.</p>
+      </CardHeader>
+
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="flipbook-name">Flipbook name</Label>
+            <Input
+              id="flipbook-name"
+              placeholder="e.g. Autumn Catalog 2025"
+              value={name}
+              onChange={(e) => { setName(e.target.value); onNameChange?.(e.target.value); }}
+              className={errors.name ? "border-destructive" : ""}
+              disabled={updateFlipbook.isPending}
+            />
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+          </div>
+
+          <div className="space-y-1">
+            {/* Show current PDF when no replacement chosen */}
+            {!pdfFile && flipbook.pdf_url ? (
+              <div className="flex items-center justify-between rounded-md bg-muted p-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="text-sm font-medium">{getFileNameFromUrl(flipbook.pdf_url)}</span>
+                </div>
+                <a
+                  href={flipbook.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline text-muted-foreground"
+                >
+                  View
+                </a>
+              </div>
+            ) : null}
+            <FileDropzone
+              id="flipbook-pdf"
+              label="PDF file"
+              description="PDF only"
+              accept="application/pdf"
+              value={pdfFile}
+              onChange={(f) => { setPdfFile(f); onPdfFileChange?.(f); }}
+              maxSizeMB={100}
+            />
+            {errors.pdf && <p className="text-xs text-destructive">{errors.pdf}</p>}
+          </div>
+
+          <div className="space-y-1">
+            {/* Show current background thumbnail when no replacement chosen */}
+            {!backgroundFile && flipbook.background_image_url ? (
+              <div className="flex items-center justify-between rounded-md bg-muted p-2">
+                <div className="flex items-center gap-2">
                   <Image
-                    src={existingUrl}
+                    src={flipbook.background_image_url}
                     alt="Current background"
                     width={64}
                     height={40}
                     unoptimized
-                    className="h-10 w-16 object-cover rounded border"
+                    className="h-10 w-16 rounded border object-cover"
                   />
-                ) : (
-                  <FileText className="h-4 w-4" />
-                )}
-                <span className="text-sm font-medium">Current file</span>
+                  <span className="text-sm font-medium">Current background</span>
+                </div>
+                <a
+                  href={flipbook.background_image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline text-muted-foreground"
+                >
+                  View
+                </a>
               </div>
-              <a
-                href={existingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs underline text-muted-foreground"
-              >
-                View
-              </a>
-            </div>
-          ) : null}
-
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-3 text-center h-15 mx-auto flex flex-col items-center justify-center">
-            <Upload className="mx-auto h-5 w-3 text-muted-foreground" />
-            <div className="mt-1.5">
-              <Label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80">
-                Click to {label.toLowerCase()}
-              </Label>
-              <Input id={`${label.toLowerCase()}-upload`} type="file" accept={accept} className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {accept.includes('pdf') ? 'PDF files only' : 'PNG, JPG, GIF up to 10MB'}
-            </p>
+            ) : null}
+            <FileDropzone
+              id="flipbook-bg"
+              label="Background image (optional)"
+              description="PNG, JPG, or GIF up to 10MB"
+              accept="image/png,image/jpeg,image/gif"
+              value={backgroundFile}
+              onChange={(f) => { setBackgroundFile(f); onBackgroundFileChange?.(f); }}
+              maxSizeMB={10}
+            />
+            {errors.background && <p className="text-xs text-destructive">{errors.background}</p>}
           </div>
-        </div>
-      )}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  );
 
-  return (
-    <div className="w-full max-w-sm mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        <div className="space-y-1.5">
-          <Label htmlFor="name" className="text-sm">Flipbook Name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter flipbook name" className={`${errors.name ? 'border-destructive' : ''} h-9 text-sm`} />
-          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-        </div>
+          <div className="flex items-center justify-between rounded-lg border bg-secondary/30 p-3">
+            <div>
+              <Label htmlFor="publish-now" className="mb-0 block">
+                Publish immediately
+              </Label>
+              <p className="text-xs text-muted-foreground">If off, you can publish later from Manage Flipbooks.</p>
+            </div>
+            <Switch
+              id="publish-now"
+              checked={isPublished}
+              onCheckedChange={(v) => { setIsPublished(v); onIsPublishedChange?.(v); }}
+              aria-label="Publish immediately"
+              disabled={updateFlipbook.isPending}
+            />
+          </div>
+        </CardContent>
 
-  <FileUpload label="Replace PDF" accept=".pdf" file={pdfFile} onChange={setPdfFile} error={errors.pdf} existingUrl={flipbook.pdf_url} />
-  <FileUpload label="Replace Background (Optional)" accept="image/*" file={backgroundFile} onChange={setBackgroundFile} error={errors.background} existingUrl={flipbook.background_image_url} />
-
-        <div className="flex items-center space-x-2">
-          <Switch id="publish" checked={isPublished} onCheckedChange={setIsPublished} />
-          <Label htmlFor="publish" className="text-sm">Published</Label>
-        </div>
-
-        <div className="flex justify-end space-x-2 pt-1.5">
-          <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={updateFlipbook.isPending}>
+        <CardFooter className="flex justify-end gap-2 mt-4">
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={updateFlipbook.isPending}>
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={updateFlipbook.isPending}>
+          <Button
+            type="submit"
+            disabled={updateFlipbook.isPending || !isReady}
+            className={cn("bg-emerald-500 text-black hover:bg-emerald-400", (!isReady || updateFlipbook.isPending) && "pointer-events-none opacity-60")}
+          >
             {updateFlipbook.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
             ) : (
-              "Save Changes"
+              "Save changes"
             )}
           </Button>
-        </div>
+        </CardFooter>
       </form>
-    </div>
+    </Card>
   );
 }
 

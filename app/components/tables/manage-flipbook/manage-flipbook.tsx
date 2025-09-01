@@ -67,8 +67,8 @@ export function createBooksColumns(
           <div
             className={`inline-flex items-center gap-3 rounded-lg px-4 py-3 border-2 transition-all duration-200 ${
               isPublished 
-                ? "bg-green-100 border-green-300 text-green-800" 
-                : "bg-orange-100 border-orange-300 text-orange-800"
+                ? "bg-[#228b2229] border-[#228b22] text-[#228b22]" 
+                : "bg-[#b3121244] border-[#b31312] text-[#b31312]"
             }`}
           >
             {/* Shadcn Switch Component */}
@@ -76,7 +76,7 @@ export function createBooksColumns(
               checked={isPublished}
               onCheckedChange={handleTogglePublish}
               disabled={isToggleLoading(flipbook.id)}
-              className={`${
+              className={`cursor-pointer ${
                 isPublished
                   ? "data-[state=checked]:bg-green-500"
                   : "data-[state=unchecked]:bg-gray-300"

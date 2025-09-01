@@ -4,8 +4,7 @@ import * as React from "react"
 import { CreateFlipbookForm } from "./create-flipbook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
-import { FileText } from "lucide-react"
+import { FileText, AlertTriangle } from "lucide-react"
 import { useCreateFlipbook } from "@/lib/hooks/use-flipbooks"
 import { CreateFlipbookData } from "@/lib/types"
 import { useRouter } from "next/navigation"
@@ -19,6 +18,18 @@ export function CreateFlipbookScreen() {
   const [bgImage, setBgImage] = React.useState<File | null>(null)
   const [publishNow, setPublishNow] = React.useState(true)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null)
+
+  // Create a blob URL to preview the selected PDF and clean it up when changed
+  React.useEffect(() => {
+    if (pdfFile && pdfFile.type === "application/pdf") {
+      const url = URL.createObjectURL(pdfFile)
+      setPdfUrl(url)
+      return () => URL.revokeObjectURL(url)
+    }
+    setPdfUrl(null)
+    return
+  }, [pdfFile])
 
   // Validation function
   const validateForm = (): boolean => {
@@ -88,15 +99,21 @@ export function CreateFlipbookScreen() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative overflow-hidden rounded-lg border bg-secondary/20">
-              <div className="aspect-[3/4] w-full">
-                {/* If a background image is selected, we cannot preview it directly without reading the file.
-                    We'll show a subtle placeholder instead. */}
-                <Image
-                  src={"/placeholder.svg?height=600&width=450&query=flipbook%20cover%20placeholder"}
-                  alt="Flipbook cover preview"
-                  fill
-                  className="object-cover"
-                />
+              <div className="aspect-[3/4] w-full relative">
+                {pdfUrl ? (
+                  <iframe
+                    src={pdfUrl}
+                    title="Flipbook PDF preview"
+                    className="absolute inset-0 h-full w-full"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/60">
+                      <AlertTriangle className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No PDF uploaded</p>
+                  </div>
+                )}
               </div>
               <div className="absolute inset-x-0 bottom-0 bg-background/70 p-3">
                 <p className="line-clamp-2 text-sm font-medium">{name || "Your flipbook name"}</p>
@@ -110,9 +127,9 @@ export function CreateFlipbookScreen() {
               </div>
             </div>
 
-            <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+            {/* <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
               Tip: You can upload now and publish later. Add background art to make your flipbook stand out.
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </aside>

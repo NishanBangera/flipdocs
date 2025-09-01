@@ -1,13 +1,16 @@
 'use client';
 
-import { ThemeProvider } from "./theme.provider";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { Toaster } from "sonner";
-import { useState } from "react";
+import { useMemo } from "react";
 
-export function RootProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
+// Create a stable QueryClient instance
+let globalQueryClient: QueryClient | undefined = undefined;
+
+function getQueryClient() {
+  if (globalQueryClient) return globalQueryClient;
+  
+  globalQueryClient = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 60 * 1000, // 1 minute
@@ -26,20 +29,18 @@ export function RootProvider({ children }: { children: React.ReactNode }) {
         retry: false,
       },
     },
-  }))
+  });
+  
+  return globalQueryClient;
+}
+
+export function RootProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useMemo(() => getQueryClient(), []);
 
   return (
     <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-            {children}
-            <Toaster richColors position="bottom-right" />
-        </ThemeProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

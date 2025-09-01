@@ -2,9 +2,11 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
-import AppShell from "@/app/components/providers/app-shell";
+import { LayoutContent } from "./components/layout-content";
+import { ThemeProvider } from "./components/providers/theme.provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,12 +34,15 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <SignedIn>
-            <AppShell>{children}</AppShell>
-          </SignedIn>
-          <SignedOut>
-            <div className="min-h-screen flex items-center justify-center">{children}</div>
-          </SignedOut>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <LayoutContent>{children}</LayoutContent>
+            <Toaster richColors position="bottom-right" />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

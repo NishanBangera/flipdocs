@@ -1,31 +1,39 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import Sidebar from "./sidebar/sidebar";
-import { RootProvider } from "./providers/root-provider";
+import { useUser } from '@clerk/nextjs';
+import { usePathname } from 'next/navigation';
+import AppShell from "./providers/app-shell";
+import { LoadingSpinner } from "./ui/loading";
+
+// Routes that don't require authentication
+const PUBLIC_ROUTES = ['/sign-in', '/sign-up'];
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith("/sign-in");
-  
-  if (isAuthPage) {
+
+  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+    pathname.startsWith(route)
+  );
+
+  // Show loading spinner while Clerk is loading
+  if (!isLoaded) {
     return (
-      <div className="flex justify-center items-center h-screen">{children}</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
 
-  return (
-    <RootProvider>
-      <div className="flex w-full h-screen">
-        <div className="overflow-y-auto dark:bg-secondary-foreground w-[220px] border-2 border-yellow-500">
-          <Sidebar />
-        </div>
-        <div className="w-0 flex-grow h-full flex flex-col border border-blue-800">
-          {/* Top Header */}
-          {/* <Header /> */}
-          <div className="flex-grow w-full h-0 overflow-auto border-2 border-red-700">{children}</div>
-        </div>
+  // For public routes (sign-in, sign-up), render without AppShell
+  if (isPublicRoute || !isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        {children}
       </div>
-    </RootProvider>
-  );
+    );
+  }
+
+  // For authenticated users, render with AppShell
+  return <AppShell>{children}</AppShell>;
 }

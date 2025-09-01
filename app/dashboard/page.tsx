@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 
 dayjs.extend(relativeTime);
 
@@ -42,7 +43,21 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const { isLoaded: isUserLoaded, isSignedIn } = useUser();
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
+
+  // Don't render anything until user auth state is loaded
+  if (!isUserLoaded || !isSignedIn) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[50vh]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   console.log("Dashboard stats:", stats);
 
   if (error) {
@@ -69,21 +84,21 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Flipbooks"
-          value={stats?.totalFlipbooks ?? 0}
+          value={stats?.total ?? 0}
           description="All your flipbooks"
           icon={BookOpen}
           isLoading={isLoading}
         />
         <StatCard
           title="Published"
-          value={stats?.publishedFlipbooks ?? 0}
+          value={stats?.published ?? 0}
           description="Live flipbooks"
           icon={Eye}
           isLoading={isLoading}
         />
         <StatCard
           title="Unpublished"
-          value={stats?.unpublishedFlipbooks ?? 0}
+          value={stats?.unpublished ?? 0}
           description="Draft flipbooks"
           icon={EyeOff}
           isLoading={isLoading}
@@ -118,7 +133,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : stats?.recent && stats.length > 0 ? (
+          ) : stats?.recent && stats.recent.length > 0 ? (
             <div className="space-y-4">
               {stats.recent.slice(0, 5).map((flipbook) => (
                 <div key={flipbook.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">

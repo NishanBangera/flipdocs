@@ -5,12 +5,12 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { CreateFlipbookScreen } from "@/app/components/forms/create-flipbook-screen"
+import { FlipbookFormScreen } from "@/app/components/forms/flipbook-form-screen"
 
 export default function Page() {
   return (
-    <main>
-      <div className="mb-6">
+    <main className="flex flex-col h-full">
+      {/* <div className="mb-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -24,9 +24,9 @@ export default function Page() {
             <BreadcrumbItem>Create</BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-      </div>
+      </div> */}
 
-      <CreateFlipbookScreen />
+      <FlipbookFormScreen mode="create" />
     </main>
   )
 }

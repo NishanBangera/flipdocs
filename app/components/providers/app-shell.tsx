@@ -10,12 +10,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col h-screen">
         {/* Dynamic Header with breadcrumbs */}
         <DynamicHeader />
 
         {/* Main content */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-grow overflow-auto p-4">
           {children}
         </div>
       </SidebarInset>

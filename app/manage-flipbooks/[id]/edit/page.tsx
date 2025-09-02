@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFlipbook } from "@/lib/hooks/use-flipbooks";
-import EditFlipbookScreen from "../../../components/forms/edit-flipbook-screen";
+import { FlipbookFormScreen } from "../../../components/forms/flipbook-form-screen";
 import { ErrorState, LoadingState } from "../../../components/ui/loading";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
@@ -14,8 +14,8 @@ export default function EditFlipbookPage() {
   const { data: flipbook, isLoading, error, refetch } = useFlipbook(id ?? "");
 
   return (
-    <main>
-      <div className="mb-6">
+    <main className="flex flex-col h-full">
+      {/* <div className="mb-6">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -29,14 +29,15 @@ export default function EditFlipbookPage() {
             <BreadcrumbItem>Edit</BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-      </div>
+      </div> */}
 
       {isLoading && <LoadingState message="Loading flipbook..." />}
       {error && (
         <ErrorState message={error.message || "Failed to load flipbook"} onRetry={() => refetch()} />
       )}
       {!isLoading && !error && flipbook && (
-        <EditFlipbookScreen
+        <FlipbookFormScreen
+          mode="edit"
           flipbook={{
             id: flipbook.id,
             name: flipbook.name,

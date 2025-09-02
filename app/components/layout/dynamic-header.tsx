@@ -1,7 +1,9 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface RouteConfig {
   title: string
@@ -55,13 +57,19 @@ export function DynamicHeader() {
   const routeConfig = getRouteConfig(pathname)
 
   return (
-    <div className="flex items-center gap-2 p-4 border-b">
-      <SidebarTrigger className="-ml-1" />
-      
+    <div className="flex justify-between items-center gap-2 p-4 border-b">
       <div className="flex-1">
         {/* Title only */}
         <h1 className="text-lg font-semibold">{routeConfig.title}</h1>
       </div>
+      {pathname === '/manage-flipbooks' && (
+        <Button asChild className="flex items-center gap-2 cursor-pointer">
+          <Link href="/manage-flipbooks/create">
+            <Plus size={16} />
+            Create New Flipbook
+          </Link>
+        </Button>
+      )}
     </div>
   )
 }

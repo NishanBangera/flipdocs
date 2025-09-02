@@ -2,13 +2,12 @@
 
 import { useDashboardStats } from "@/lib/hooks/use-flipbooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
+import { BookOpen, CircleCheck, CircleX } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "../components/ui/loading";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useUser } from "@clerk/nextjs";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList } from "@/components/ui/breadcrumb";
 
 dayjs.extend(relativeTime);
 
@@ -22,7 +21,7 @@ function StatCard({
   title: string;
   value: number | string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement> & { className?: string }>;
   isLoading: boolean;
 }) {
   return (
@@ -72,11 +71,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>Dashboard</BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <div>
         <p className="text-muted-foreground">
           Welcome back! Here is an overview of your flipbooks.

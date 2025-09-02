@@ -33,7 +33,6 @@ const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => 
 export default function ManageFlipbooks() {
   const [currentPage, setCurrentPage] = useState(0);
   const { data: flipbooks = [], isLoading, error, refetch } = useFlipbooks();
-  console.log("Fetched flipbooks12222222:", flipbooks);
   const router = useRouter();
   
   // Get React Query hooks for table actions
@@ -59,17 +58,6 @@ export default function ManageFlipbooks() {
   if (error) {
     return (
       <div>
-        <div className="mb-6">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>Manage Flipbooks</BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
         <div className="flex items-center justify-end mb-6">
           <Button asChild className="flex items-center gap-2 cursor-pointer">
             <Link href="/manage-flipbooks/create">
@@ -88,19 +76,6 @@ export default function ManageFlipbooks() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <div className="flex justify-between items-center">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>Manage Flipbooks</BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <Button asChild className="flex items-center gap-2 cursor-pointer">
-          <Link href="/manage-flipbooks/create">
-            <Plus size={16} />
-            Create New Flipbook
-          </Link>
-        </Button>
-      </div>
       <div className="flex-grow rounded-lg">
         <DataTable
           data={tableData}

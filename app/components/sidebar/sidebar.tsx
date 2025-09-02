@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Element4, ProfileCircle, Book1, Book } from "iconsax-reactjs";
 import UserDetailsCard from "./user-card";
+import { SidebarArrowToggle } from "./sidebar-arrow-toggle";
 
 const sidebarNavItems = [
     {
@@ -50,14 +51,16 @@ function AppSidebar() {
     const isCollapsed = state === "collapsed";
     
     return (
-        <Sidebar collapsible="icon" className="h-full">
+        <Sidebar collapsible="icon" className="h-full relative">
             <SidebarHeader className={`${isCollapsed ? 'px-2 py-4' : 'px-4 py-6'}`}>
-                <div className="flex items-center">
-                    {isCollapsed ? (
-                        <Book size={24} className="text-primary" />
-                    ) : (
-                        <span className="text-xl font-bold">Flipbook</span>
-                    )}
+                <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
+                    <div className="flex items-center">
+                        {isCollapsed ? (
+                            <Book size={24} className="text-primary" />
+                        ) : (
+                            <span className="text-xl font-bold ml-2">Flipbook</span>
+                        )}
+                    </div>
                 </div>
             </SidebarHeader>
             
@@ -80,7 +83,7 @@ function AppSidebar() {
                                     aria-disabled={item.disabled}
                                     className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'justify-start gap-3 w-full'}`}
                                 >
-                                    <span className={`flex items-center justify-center opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 ${isCollapsed ? 'w-full' : 'w-5 h-5'}`}>
+                                    <span className={`flex items-center text-green-500 justify-center opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 ${isCollapsed ? 'w-full' : 'w-5 h-5'}`}>
                                         {item.icon}
                                     </span>
                                     {!isCollapsed && (
@@ -100,6 +103,8 @@ function AppSidebar() {
             <SidebarFooter className={`${isCollapsed ? 'px-2 pb-2' : 'px-3 pb-2'}`}>
                 <UserDetailsCard />
             </SidebarFooter>
+            
+            <SidebarArrowToggle />
         </Sidebar>
     );
 }

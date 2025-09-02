@@ -118,13 +118,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>Profile</BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
       <div className="mb-4">
         <p className="text-sm text-muted-foreground">Manage your account settings and preferences</p>
       </div>
@@ -163,7 +156,7 @@ export default function ProfilePage() {
               </Button>
             ) : (
               <>
-                <Button onClick={onSave} disabled={loading || saving || name.trim() === initialName.trim()}>
+                <Button onClick={onSave} className="disabled:cursor-not-allowed" disabled={loading || saving || name.trim() === initialName.trim()}>
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
                 <Button variant="outline" onClick={onCancel} disabled={loading || saving}>
@@ -195,7 +188,6 @@ export default function ProfilePage() {
                   <Input
                     id="currentPassword"
                     type="password"
-                    placeholder="••••••••"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     disabled={loading}
@@ -207,7 +199,6 @@ export default function ProfilePage() {
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   disabled={loading}
@@ -218,7 +209,6 @@ export default function ProfilePage() {
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={loading}
@@ -227,6 +217,7 @@ export default function ProfilePage() {
               <div className="flex gap-3">
                 <Button
                   onClick={onChangePassword}
+                  className="disabled:cursor-not-allowed"
                   disabled={
                     loading ||
                     changingPwd ||

@@ -65,14 +65,14 @@ export function createBooksColumns(
 
         return (
           <div
-            className={`inline-flex items-center gap-3 rounded-lg px-4 py-3 border-2 transition-all duration-200 ${
+            className={`inline-flex w-44 items-center gap-3 rounded-lg px-4 py-3 border-2 transition-all duration-200 ${
               isPublished 
                 ? "bg-[#228b2229] border-[#228b22] text-[#228b22]" 
-                : "bg-[#b3121244] border-[#b31312] text-[#b31312]"
+                : "bg-[#bf763f3e] border-[#c65e0e] text-[#c65e0e]"
             }`}
           >
             {/* Shadcn Switch Component */}
-            <Switch
+            <Switch 
               checked={isPublished}
               onCheckedChange={handleTogglePublish}
               disabled={isToggleLoading(flipbook.id)}
@@ -144,28 +144,18 @@ export function createBooksColumns(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-amber-300/70 hover:text-amber-300"
               onClick={() => openEdit(flipbook)}
               title="Edit flipbook"
             >
               <span className="sr-only">Edit</span>
               <Pencil className="h-4 w-4" />
             </Button>
-            {/* <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0 cursor-pointer"
-              onClick={handleView}
-              title="View PDF"
-            >
-              <span className="sr-only">View PDF</span>
-              <BookOpen className="h-4 w-4" />
-            </Button> */}
             
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0"
+              className={`h-8 w-8 p-0 text-green-600 hover:text-green-600 disabled:cursor-not-allowed`}
               onClick={handleShare}
               disabled={!isPublished}
               title={isPublished ? "Copy share link" : "Publish to share"}
@@ -177,7 +167,7 @@ export function createBooksColumns(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-0 text-destructive"
+              className="h-8 w-8 p-0 text-destructive/80 hover:text-destructive"
               onClick={handleDelete}
               disabled={isDeleteLoading(flipbook.id)}
               title="Delete flipbook"

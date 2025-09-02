@@ -1,12 +1,21 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { IconLogout } from "@tabler/icons-react";
-import { CircleUser } from "lucide-react";
+import { CircleUser, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { useSidebar } from "@/components/ui/sidebar";
+import Link from "next/link";
 
 function UserDetailsCard() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -57,19 +66,47 @@ function UserDetailsCard() {
   if (state === "collapsed") {
     return (
       <div className="w-full flex justify-center">
-        <button
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          aria-label="Sign out"
-          className={`cursor-pointer hover:bg-accent rounded-md p-2 transition-colors ${
-            isLoggingOut ? "opacity-50 pointer-events-none" : ""
-          }`}
-        >
-          <Avatar className="w-8 h-8">
-            <AvatarImage src={user?.imageUrl || ""} alt={displayName} />
-            <AvatarFallback className="text-xs">{avatarFallback || <CircleUser size={16} />}</AvatarFallback>
-          </Avatar>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label="Open user menu"
+              className="cursor-pointer hover:bg-accent rounded-md p-2 transition-colors"
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={user?.imageUrl || ""} alt={displayName} />
+                <AvatarFallback className="text-xs">{avatarFallback || <CircleUser size={16} />}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">
+                  {isSignedIn ? displayName : "User"}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ""}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="cursor-pointer text-red-600 focus:text-red-600"
+            >
+              <IconLogout className="mr-2 h-4 w-4" />
+              <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }

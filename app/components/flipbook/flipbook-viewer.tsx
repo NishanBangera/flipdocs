@@ -20,10 +20,22 @@ interface FlipbookViewerProps {
 }
 
 export function FlipbookViewer({ flipbook }: FlipbookViewerProps) {
-  const [numPages, setNumPages] = useState<number | null>(null);
   const [pdfPages, setPdfPages] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper: fetch an image and convert to data URL to avoid CORS texture issues
+  async function imageUrlToDataURL(url: string): Promise<string> {
+    const res = await fetch(url, { credentials: 'omit' });
+    if (!res.ok) throw new Error(`Failed to fetch cover image (${res.status})`);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
 
   // Load PDF and render each page to a canvas, then extract as image
   useEffect(() => {
@@ -39,8 +51,7 @@ export function FlipbookViewer({ flipbook }: FlipbookViewerProps) {
         }
 
         const loadingTask = pdfjs.getDocument({ url: pdfUrl, withCredentials: false });
-        const pdf = await loadingTask.promise;
-        setNumPages(pdf.numPages);
+  const pdf = await loadingTask.promise;
         
         const images: string[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -58,7 +69,18 @@ export function FlipbookViewer({ flipbook }: FlipbookViewerProps) {
           await page.render({ canvasContext: context, viewport }).promise;
           images.push(canvas.toDataURL('image/jpeg', 0.92));
         }
-        setPdfPages(images);
+        // If a cover image exists, prepend it as page 1; otherwise use the PDF pages as-is
+        if (flipbook.cover_image_url) {
+          try {
+            const coverDataUrl = await imageUrlToDataURL(flipbook.cover_image_url);
+            setPdfPages([coverDataUrl, ...images]);
+          } catch (err) {
+            console.warn('Cover image fetch failed; using URL directly:', err);
+            setPdfPages([flipbook.cover_image_url, ...images]);
+          }
+        } else {
+          setPdfPages(images);
+        }
       } catch (e) {
         console.error('PDF loading error:', e);
         setError(e instanceof Error ? e.message : 'Failed to load PDF. Please check the URL or CORS settings.');
@@ -68,7 +90,7 @@ export function FlipbookViewer({ flipbook }: FlipbookViewerProps) {
     }
     
     loadPdf();
-  }, [flipbook.pdf_url]);
+  }, [flipbook.pdf_url, flipbook.cover_image_url]);
 
   return (
     <>

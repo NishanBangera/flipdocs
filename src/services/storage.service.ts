@@ -36,7 +36,24 @@ export class StorageService {
     return publicUrl;
   }
 
-  static async deleteFile(url: string, bucket: 'flipbook-pdfs' | 'flipbook-backgrounds'): Promise<void> {
+  static async uploadCoverImage(file: File, userId: string): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${nanoid()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('flipbook-covers')
+      .upload(fileName, file);
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('flipbook-covers')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  }
+
+  static async deleteFile(url: string, bucket: 'flipbook-pdfs' | 'flipbook-backgrounds' | 'flipbook-covers'): Promise<void> {
     // Extract file path from URL
     const urlParts = url.split('/');
     const filePath = urlParts.slice(-2).join('/'); // Gets userId/filename

@@ -59,6 +59,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
       name: t.String(),
       pdf: t.File(),
       backgroundImage: t.Optional(t.File()),
+  coverImage: t.Optional(t.File()),
       isPublished: t.String()
     })
   })
@@ -90,6 +91,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
       name: t.Optional(t.String()),
       pdf: t.Optional(t.File()),
       backgroundImage: t.Optional(t.File()),
+  coverImage: t.Optional(t.File()),
       isPublished: t.Optional(t.Union([t.Boolean(), t.String()]))
     })
   })

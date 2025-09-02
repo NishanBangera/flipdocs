@@ -18,6 +18,12 @@ export class FlipbookService {
       backgroundImageUrl = await StorageService.uploadBackgroundImage(data.backgroundImage, userId);
     }
 
+    // Upload cover image if provided
+    let coverImageUrl = null;
+    if (data.coverImage) {
+      coverImageUrl = await StorageService.uploadCoverImage(data.coverImage, userId);
+    }
+
     // Create flipbook record
     const { data: flipbook, error } = await supabase
       .from('flipbooks')
@@ -27,6 +33,7 @@ export class FlipbookService {
         slug,
         pdf_url: pdfUrl,
         background_image_url: backgroundImageUrl,
+  cover_image_url: coverImageUrl,
         is_published: data.isPublished
       })
       .select()
@@ -78,6 +85,16 @@ export class FlipbookService {
       updates.background_image_url = await StorageService.uploadBackgroundImage(data.backgroundImage, userId);
     }
 
+    // Update cover image if provided
+    if (data.coverImage) {
+      // Delete old cover if exists
+      if (existingFlipbook.cover_image_url) {
+        await StorageService.deleteFile(existingFlipbook.cover_image_url, 'flipbook-covers');
+      }
+      // Upload new cover
+      updates.cover_image_url = await StorageService.uploadCoverImage(data.coverImage, userId);
+    }
+
     // Update publish status
     if (data.isPublished !== undefined) {
       updates.is_published = data.isPublished;
@@ -115,6 +132,11 @@ export class FlipbookService {
     // Delete background image if exists
     if (flipbook.background_image_url) {
       await StorageService.deleteFile(flipbook.background_image_url, 'flipbook-backgrounds');
+    }
+
+    // Delete cover image if exists
+    if (flipbook.cover_image_url) {
+      await StorageService.deleteFile(flipbook.cover_image_url, 'flipbook-covers');
     }
 
     // Delete flipbook record

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { FileDropzone } from "../file-dropzone"
-import { BookOpen, Check } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -15,6 +15,8 @@ type Props = {
   setPdfFile: (f: File | null) => void
   bgImage: File | null
   setBgImage: (f: File | null) => void
+  coverImage: File | null
+  setCoverImage: (f: File | null) => void
   publishNow: boolean
   setPublishNow: (v: boolean) => void
   onSubmit: () => void
@@ -30,6 +32,8 @@ export function CreateFlipbookForm({
   setPdfFile,
   bgImage,
   setBgImage,
+  coverImage,
+  setCoverImage,
   publishNow,
   setPublishNow,
   onSubmit,
@@ -89,6 +93,19 @@ export function CreateFlipbookForm({
             maxSizeMB={10}
           />
           {errors.background && <p className="text-xs text-destructive">{errors.background}</p>}
+        </div>
+
+        <div className="space-y-1">
+          <FileDropzone
+            id="flipbook-cover"
+            label="Cover image (optional)"
+            description="PNG, JPG, or GIF up to 10MB"
+            accept="image/png,image/jpeg,image/gif"
+            value={coverImage}
+            onChange={setCoverImage}
+            maxSizeMB={10}
+          />
+          {errors.cover && <p className="text-xs text-destructive">{errors.cover}</p>}
         </div>
 
         <div className="flex items-center justify-between rounded-lg border bg-secondary/30 p-3">

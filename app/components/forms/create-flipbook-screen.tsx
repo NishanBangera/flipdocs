@@ -16,6 +16,7 @@ export function CreateFlipbookScreen() {
   const [name, setName] = React.useState("")
   const [pdfFile, setPdfFile] = React.useState<File | null>(null)
   const [bgImage, setBgImage] = React.useState<File | null>(null)
+  const [coverImage, setCoverImage] = React.useState<File | null>(null)
   const [publishNow, setPublishNow] = React.useState(true)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
   const [pdfUrl, setPdfUrl] = React.useState<string | null>(null)
@@ -49,6 +50,10 @@ export function CreateFlipbookScreen() {
       newErrors.background = "Background file must be an image"
     }
 
+    if (coverImage && !coverImage.type.startsWith("image/")) {
+      newErrors.cover = "Cover file must be an image"
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -60,6 +65,7 @@ export function CreateFlipbookScreen() {
       name: name.trim(),
       pdf: pdfFile!,
       backgroundImage: bgImage || undefined,
+  coverImage: coverImage || undefined,
       isPublished: publishNow,
     }
 
@@ -83,6 +89,8 @@ export function CreateFlipbookScreen() {
           setPdfFile={setPdfFile}
           bgImage={bgImage}
           setBgImage={setBgImage}
+          coverImage={coverImage}
+          setCoverImage={setCoverImage}
           publishNow={publishNow}
           setPublishNow={setPublishNow}
           onSubmit={handleSubmit}

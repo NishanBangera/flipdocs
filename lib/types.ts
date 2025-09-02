@@ -6,6 +6,7 @@ export interface Flipbook {
   slug: string;
   pdf_url: string;
   background_image_url?: string;
+  cover_image_url?: string;
   is_published: boolean;
   user_id: string;
   created_at: string;
@@ -16,6 +17,7 @@ export interface CreateFlipbookData {
   name: string;
   pdf: File;
   backgroundImage?: File;
+  coverImage?: File;
   isPublished: boolean;
 }
 
@@ -23,6 +25,7 @@ export interface UpdateFlipbookData {
   name?: string;
   pdf?: File;
   backgroundImage?: File;
+  coverImage?: File;
   isPublished?: boolean;
 }
 
@@ -53,4 +56,5 @@ export interface FlipbookTableItem {
   createdAt: string;
   pdf_url: string;
   background_image_url?: string;
+  cover_image_url?: string;
 }

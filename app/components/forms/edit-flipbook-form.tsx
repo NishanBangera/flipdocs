@@ -20,6 +20,7 @@ export interface EditFlipbookFormProps {
     status: "published" | "unpublished";
     pdf_url: string;
     background_image_url?: string;
+  cover_image_url?: string;
   };
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -35,6 +36,7 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel, onNameChange, 
   const [isPublished, setIsPublished] = useState(flipbook.status === "published");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateFlipbook = useUpdateFlipbook();
@@ -44,6 +46,7 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel, onNameChange, 
     if (!name.trim()) errs.name = "Flipbook name is required";
     if (pdfFile && pdfFile.type !== "application/pdf") errs.pdf = "File must be a PDF";
     if (backgroundFile && !backgroundFile.type.startsWith("image/")) errs.background = "Background must be an image";
+  if (coverFile && !coverFile.type.startsWith("image/")) errs.cover = "Cover must be an image";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -56,6 +59,7 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel, onNameChange, 
     if (name.trim() && name.trim() !== flipbook.name) data.name = name.trim();
     if (pdfFile) data.pdf = pdfFile;
     if (backgroundFile) data.backgroundImage = backgroundFile;
+  if (coverFile) data.coverImage = coverFile;
     data.isPublished = isPublished;
 
     try {
@@ -172,6 +176,43 @@ export function EditFlipbookForm({ flipbook, onSuccess, onCancel, onNameChange, 
               maxSizeMB={10}
             />
             {errors.background && <p className="text-xs text-destructive">{errors.background}</p>}
+          </div>
+
+          <div className="space-y-1">
+            {/* Show current cover thumbnail when no replacement chosen */}
+            {!coverFile && flipbook.cover_image_url ? (
+              <div className="flex items-center justify-between rounded-md bg-muted p-2">
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={flipbook.cover_image_url}
+                    alt="Current cover"
+                    width={64}
+                    height={40}
+                    unoptimized
+                    className="h-10 w-16 rounded border object-cover"
+                  />
+                  <span className="text-sm font-medium">Current cover</span>
+                </div>
+                <a
+                  href={flipbook.cover_image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline text-muted-foreground"
+                >
+                  View
+                </a>
+              </div>
+            ) : null}
+            <FileDropzone
+              id="flipbook-cover"
+              label="Cover image (optional)"
+              description="PNG, JPG, or GIF up to 10MB"
+              accept="image/png,image/jpeg,image/gif"
+              value={coverFile}
+              onChange={(f) => { setCoverFile(f); }}
+              maxSizeMB={10}
+            />
+            {errors.cover && <p className="text-xs text-destructive">{errors.cover}</p>}
           </div>
 
           <div className="flex items-center justify-between rounded-lg border bg-secondary/30 p-3">

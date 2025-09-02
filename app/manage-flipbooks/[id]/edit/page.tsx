@@ -43,6 +43,7 @@ export default function EditFlipbookPage() {
             status: flipbook.is_published ? "published" : "unpublished",
             pdf_url: flipbook.pdf_url,
             background_image_url: flipbook.background_image_url,
+            cover_image_url: flipbook.cover_image_url,
           }}
           onSuccess={() => router.replace("/manage-flipbooks")}
           onCancel={() => router.push("/manage-flipbooks")}

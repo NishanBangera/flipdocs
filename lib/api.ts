@@ -47,6 +47,9 @@ export class FlipbookApi {
       if (data.backgroundImage) {
         formData.append('backgroundImage', data.backgroundImage);
       }
+      if (data.coverImage) {
+        formData.append('coverImage', data.coverImage);
+      }
       console.log("check33333333333")
       const response = await this.apiClient.post<ApiResponse<Flipbook>>(
         '/flipbooks',
@@ -76,6 +79,7 @@ export class FlipbookApi {
       if (data.name) formData.append('name', data.name);
       if (data.pdf) formData.append('pdf', data.pdf);
       if (data.backgroundImage) formData.append('backgroundImage', data.backgroundImage);
+  if (data.coverImage) formData.append('coverImage', data.coverImage);
       if (data.isPublished !== undefined) formData.append('isPublished', data.isPublished ? 'true' : 'false');
 
       const response = await this.apiClient.put<ApiResponse<Flipbook>>(

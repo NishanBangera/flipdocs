@@ -1,0 +1,49 @@
+# Alternative Dockerfile for better Render compatibility
+FROM oven/bun:1 as builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lock* ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN bun run build
+
+# Production stage - use Node.js for better compatibility
+FROM node:18-alpine as production
+
+# Install bun in production
+RUN npm install -g bun
+
+WORKDIR /app
+
+# Copy package.json
+COPY package.json ./
+
+# Install production dependencies with npm as fallback
+RUN npm install --only=production || true
+
+# Copy built application
+COPY --from=builder /app/dist ./dist
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 -G nodejs
+
+# Change ownership
+RUN chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# The PORT environment variable will be provided by Render
+EXPOSE 10000
+
+# Use exec form for better signal handling
+CMD ["bun", "dist/index.js"]

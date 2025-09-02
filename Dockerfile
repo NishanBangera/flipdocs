@@ -37,17 +37,19 @@ COPY --from=builder /app/dist ./dist
 # Copy any other necessary files (like .env template)
 COPY --from=builder /app/src ./src
 
-# Expose the port the app runs on
-EXPOSE 3001
+# Expose the port the app runs on (Render typically uses 10000)
+EXPOSE 10000
 
 # Set environment variables (these will be overridden by your hosting service)
 ENV NODE_ENV=production
-ENV PORT=3001
 
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
+
+# Change ownership of the app directory to the nodejs user
+RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Command to run the application
-CMD ["bun", "run", "start"]
+CMD ["bun", "dist/index.js"]

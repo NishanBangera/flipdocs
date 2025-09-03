@@ -1,21 +1,21 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-// Publish toggle moved to header
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileDropzone } from "../file-dropzone"
 import { BookOpen, Loader2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCreateFlipbook, useUpdateFlipbook } from "@/lib/hooks/use-flipbooks"
-import { useFlipbookApi } from "@/lib/api"
-import type { CreateFlipbookData, UpdateFlipbookData } from "@/lib/types"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { useSlugValidation } from "@/hooks/use-slug-validation"
+import { isValidSlugFormat, getFileNameFromUrl } from "@/lib/utils/slug"
 import { usePublish } from "../providers/publish.provider"
+import type { CreateFlipbookData, UpdateFlipbookData } from "@/lib/types"
 
 export interface FlipbookFormProps {
-  // Mode and data
   mode: "create" | "edit"
   flipbook?: {
     id: string
@@ -50,192 +50,27 @@ export function FlipbookForm({
   onBackgroundFileChange,
   onCoverFileChange,
 }: FlipbookFormProps) {
-  // Local media query hook for very small screens
-  const useMediaQuery = (query: string) => {
-    const [matches, setMatches] = useState(false)
-    useEffect(() => {
-      const mql = window.matchMedia(query)
-      const onChange = (e: MediaQueryListEvent) => setMatches(e.matches)
-      setMatches(mql.matches)
-      mql.addEventListener("change", onChange)
-      return () => mql.removeEventListener("change", onChange)
-    }, [query])
-    return matches
-  }
-
   const isXs = useMediaQuery("(max-width: 424px)")
-  // Initialize form state based on mode
-  const [name, setName] = useState(mode === "edit" ? flipbook?.name || "" : "")
-  const [slug, setSlug] = useState(mode === "edit" ? flipbook?.slug || "" : "")
-  const [slugValidation, setSlugValidation] = useState<{
-    isValidating: boolean;
-    isValid: boolean;
-    message: string;
-    suggestedSlug?: string;
-  }>({ isValidating: false, isValid: true, message: "" })
-  // Publish is controlled in the header. For create, we'll read from context on submit.
   const publishCtx = usePublish()
 
-  const flipbookApi = useFlipbookApi()
+  // Form state
+  const [name, setName] = useState(mode === "edit" ? flipbook?.name || "" : "")
+  const [slug, setSlug] = useState(mode === "edit" ? flipbook?.slug || "" : "")
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [hasUserModifiedSlug, setHasUserModifiedSlug] = useState(false)
 
+  // Hooks
   const createFlipbook = useCreateFlipbook()
   const updateFlipbook = useUpdateFlipbook()
+  const slugValidation = useSlugValidation({
+    mode,
+    flipbookId: flipbook?.id,
+    originalSlug: flipbook?.slug
+  })
 
   const isPending = createFlipbook.isPending || updateFlipbook.isPending
-
-  // Debouncing timer ref
-  const slugValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const slugInputRef = useRef<HTMLInputElement>(null)
-
-  // Slug validation function - optimized to prevent unnecessary re-renders
-  const validateSlug = useCallback(async (slugToValidate: string) => {
-    if (!slugToValidate.trim()) {
-      setSlugValidation({ isValidating: false, isValid: true, message: "" })
-      return
-    }
-
-    // Preserve focus by storing current active element
-    const activeElement = document.activeElement
-
-    // Only update isValidating if it's not already true to prevent re-renders
-    setSlugValidation(prev => {
-      if (prev.isValidating) return prev
-      return { ...prev, isValidating: true }
-    })
-
-    try {
-      const result = await flipbookApi.validateSlug(
-        slugToValidate,
-        mode === "edit" ? flipbook?.id : undefined
-      )
-
-      // Batch the state update to prevent multiple re-renders
-      const newState = result.available ? {
-        isValidating: false,
-        isValid: true,
-        message: "Slug is available"
-      } : {
-        isValidating: false,
-        isValid: false,
-        message: `Slug is already taken. Suggested: ${result.suggestedSlug}`,
-        suggestedSlug: result.suggestedSlug
-      }
-
-      setSlugValidation(newState)
-
-      // Restore focus if it was lost
-      if (activeElement === slugInputRef.current && document.activeElement !== slugInputRef.current) {
-        setTimeout(() => slugInputRef.current?.focus(), 0)
-      }
-
-  } catch {
-      setSlugValidation({
-        isValidating: false,
-        isValid: false,
-        message: "Error validating slug"
-      })
-
-      // Restore focus if it was lost
-      if (activeElement === slugInputRef.current && document.activeElement !== slugInputRef.current) {
-        setTimeout(() => slugInputRef.current?.focus(), 0)
-      }
-    }
-  }, [flipbookApi, mode, flipbook?.id])
-
-  // Debounced slug validation effect - only run if user has modified slug or in create mode
-  useEffect(() => {
-    if (slugValidationTimeoutRef.current) {
-      clearTimeout(slugValidationTimeoutRef.current)
-    }
-
-    const currentSlug = slug.trim()
-    const originalSlug = mode === "edit" ? flipbook?.slug || "" : ""
-    
-    // If in edit mode and slug matches original, show "Current slug" without API call
-    if (mode === "edit" && currentSlug === originalSlug && currentSlug) {
-      setSlugValidation({
-        isValidating: false,
-        isValid: true,
-        message: "Current slug"
-      })
-      return
-    }
-
-    // Only validate if:
-    // 1. User has modified the slug (for edit mode) AND slug is different from original
-    // 2. Or we're in create mode
-    if (currentSlug && ((hasUserModifiedSlug && mode === "edit" && currentSlug !== originalSlug) || mode === "create")) {
-      slugValidationTimeoutRef.current = setTimeout(() => {
-        validateSlug(currentSlug)
-      }, 500)
-    } else if (!currentSlug) {
-      setSlugValidation({ isValidating: false, isValid: true, message: "" })
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (slugValidationTimeoutRef.current) {
-        clearTimeout(slugValidationTimeoutRef.current)
-      }
-    }
-  }, [slug, validateSlug, hasUserModifiedSlug, mode, flipbook?.slug])
-
-  // Auto-generate slug from name
-  const generateSlugFromName = async () => {
-    if (!name.trim()) return
-
-    // Simple slug generation on frontend
-    const baseSlug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
-
-    // Check availability and get suggestion if taken
-    try {
-      const result = await flipbookApi.validateSlug(
-        baseSlug,
-        mode === "edit" ? flipbook?.id : undefined
-      )
-
-      // Use the suggested slug (which will be the original if available, or an alternative)
-      const finalSlug = result.suggestedSlug || baseSlug
-      setSlug(finalSlug)
-      onSlugChange?.(finalSlug)
-      // Mark as user modified since they clicked the auto-generate button
-      setHasUserModifiedSlug(true)
-
-      // Set validation state
-      setSlugValidation({
-        isValidating: false,
-        isValid: result.available || !!result.suggestedSlug,
-        message: result.available
-          ? "Slug is available"
-          : result.suggestedSlug
-            ? `Original slug taken, using: ${result.suggestedSlug}`
-            : "Slug is taken",
-        suggestedSlug: result.suggestedSlug
-      })
-
-  } catch {
-      // Fallback: just set the base slug and let normal validation handle it
-      setSlug(baseSlug)
-      onSlugChange?.(baseSlug)
-      // Mark as user modified since they clicked the auto-generate button
-      setHasUserModifiedSlug(true)
-      setSlugValidation({
-        isValidating: false,
-        isValid: false,
-        message: "Error generating slug, please check manually"
-      })
-    }
-  }
 
   // Validation function
   const validate = (): boolean => {
@@ -247,7 +82,7 @@ export function FlipbookForm({
 
     if (!slug.trim()) {
       newErrors.slug = "Slug is required"
-    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    } else if (!isValidSlugFormat(slug)) {
       newErrors.slug = "Slug can only contain lowercase letters, numbers, and hyphens"
     }
 
@@ -311,40 +146,36 @@ export function FlipbookForm({
     }
   }
 
-  // Handle field changes with preview sync
+  // Event handlers
   const handleNameChange = (value: string) => {
     setName(value)
     onNameChange?.(value)
   }
 
-  const handleSlugChange = useCallback((value: string) => {
-    const sanitizedSlug = value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-    setSlug(sanitizedSlug)
-    onSlugChange?.(sanitizedSlug)
-    // Mark that user has modified the slug
-    if (!hasUserModifiedSlug) {
-      setHasUserModifiedSlug(true)
-    }
-    // Validation will be handled by the useEffect hook with debouncing
-  }, [onSlugChange, hasUserModifiedSlug])
+  const handleSlugChange = (value: string) => {
+    const newSlug = slugValidation.handleSlugChange(value, onSlugChange)
+    setSlug(newSlug)
+  }
 
-  // Handle blur to show current slug message for unchanged values (no API call)
-  const handleSlugBlur = useCallback(() => {
-    const currentSlug = slug.trim()
-    const originalSlug = mode === "edit" ? flipbook?.slug || "" : ""
-    
-    // If in edit mode and slug matches original, show "Current slug" without API call
-    if (mode === "edit" && currentSlug === originalSlug && currentSlug) {
-      setSlugValidation({
-        isValidating: false,
-        isValid: true,
-        message: "Current slug"
-      })
-    }
-    
-    // No API calls on blur - validation only happens through debounced input changes
-  }, [slug, mode, flipbook?.slug])
+  const handleSlugBlur = () => {
+    slugValidation.handleSlugBlur(slug)
+  }
 
+  const handleGenerateSlug = async () => {
+    const newSlug = await slugValidation.generateFromName(name, onSlugChange)
+    if (newSlug) {
+      setSlug(newSlug)
+    }
+  }
+
+  const handleUseSuggestion = () => {
+    slugValidation.useSuggestion((newSlug) => {
+      setSlug(newSlug)
+      onSlugChange?.(newSlug)
+    })
+  }
+
+  // File handlers
   const handlePdfFileChange = (file: File | null) => {
     setPdfFile(file)
     onPdfFileChange?.(file)
@@ -360,50 +191,22 @@ export function FlipbookForm({
     onCoverFileChange?.(file)
   }
 
-  // Publish is controlled in header; no local handler
-
-  // Check if form has changes in edit mode
+  // Computed values
   const hasChanges = useMemo(() => {
-    if (mode === "create") return true // Always allow creation
+    if (mode === "create") return true
 
-    // Check if any field has changed from original values
     const nameChanged = name.trim() !== (flipbook?.name || "")
     const slugChanged = slug.trim() !== (flipbook?.slug || "")
     const hasNewFiles = pdfFile !== null || backgroundFile !== null || coverFile !== null
 
     return nameChanged || slugChanged || hasNewFiles
   }, [mode, name, slug, pdfFile, backgroundFile, coverFile, flipbook])
-  // Check if form is ready for submission
+
   const isReady = name.trim().length > 0 &&
     slug.trim().length > 0 &&
-    slugValidation.isValid &&
+    slugValidation.validation.isValid &&
     (mode === "edit" || pdfFile !== null) &&
-    hasChanges // Only allow submission if there are changes (or in create mode)
-
-  // Initialize slug validation for edit mode
-  useEffect(() => {
-    if (mode === "edit" && flipbook?.slug && slug === flipbook.slug) {
-      // For edit mode, set initial validation state for existing slug
-      setSlugValidation({
-        isValidating: false,
-        isValid: true,
-        message: "Current slug"
-      })
-    }
-  }, [mode, flipbook?.slug, slug])
-
-  // Helper to get filename from URL
-  const getFileNameFromUrl = (url?: string) => {
-    if (!url) return ""
-    try {
-      const u = new URL(url)
-      const last = u.pathname.split("/").pop() || url
-      return decodeURIComponent(last)
-    } catch {
-      const last = url.split("/").pop() || url
-      return decodeURIComponent(last)
-    }
-  }
+    hasChanges
 
   const submitButtonText = mode === "create"
     ? (isPending ? "Creating..." : "Create flipbook")
@@ -445,7 +248,7 @@ export function FlipbookForm({
             <Label htmlFor="flipbook-slug" className="text-xs sm:text-sm md:text-base">URL slug</Label>
             <div className="flex gap-2">
               <Input
-                ref={slugInputRef}
+                ref={slugValidation.inputRef}
                 id="flipbook-slug"
                 placeholder="e.g. autumn-catalog-2025"
                 value={slug}
@@ -453,7 +256,7 @@ export function FlipbookForm({
                 onBlur={handleSlugBlur}
                 className={cn(
                   errors.slug && "border-destructive",
-                  !slugValidation.isValid && slug.trim() && "border-destructive",
+                  !slugValidation.validation.isValid && slug.trim() && "border-destructive",
                   "text-sm sm:text-base h-9 sm:h-10 flex-1"
                 )}
                 disabled={isPending}
@@ -462,49 +265,32 @@ export function FlipbookForm({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={generateSlugFromName}
-                disabled={isPending || !name.trim() || slugValidation.isValidating}
+                onClick={handleGenerateSlug}
+                disabled={isPending || !name.trim() || slugValidation.validation.isValidating}
                 className="h-9 sm:h-10 px-3 flex-shrink-0"
               >
-                <RefreshCw className={cn("h-4 w-4", slugValidation.isValidating && "animate-spin")} />
+                <RefreshCw className={cn("h-4 w-4", slugValidation.validation.isValidating && "animate-spin")} />
                 <span className="ml-1 hidden sm:inline">Auto</span>
               </Button>
             </div>
             {errors.slug && <p className="text-xs text-destructive">{errors.slug}</p>}
-            {slugValidation.message && (
+            {slugValidation.validation.message && (
               <div className={cn(
                 "text-xs flex items-center gap-1",
-                slugValidation.isValid ? "text-emerald-600" : "text-destructive"
+                slugValidation.validation.isValid ? "text-emerald-600" : "text-destructive"
               )}>
-                {slugValidation.isValidating ? (
+                {slugValidation.validation.isValidating ? (
                   <>
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Checking availability...
                   </>
                 ) : (
                   <>
-                    {slugValidation.message}
-                    {!slugValidation.isValid && slugValidation.suggestedSlug && (
+                    {slugValidation.validation.message}
+                    {!slugValidation.validation.isValid && slugValidation.validation.suggestedSlug && (
                       <button
                         type="button"
-                        onClick={() => {
-                          const suggestedSlug = slugValidation.suggestedSlug!
-                          setSlug(suggestedSlug)
-                          onSlugChange?.(suggestedSlug)
-                          setHasUserModifiedSlug(true)
-                          
-                          // Check if suggested slug is same as original
-                          const originalSlug = mode === "edit" ? flipbook?.slug || "" : ""
-                          if (mode === "edit" && suggestedSlug === originalSlug) {
-                            setSlugValidation({
-                              isValidating: false,
-                              isValid: true,
-                              message: "Current slug"
-                            })
-                          } else {
-                            validateSlug(suggestedSlug)
-                          }
-                        }}
+                        onClick={handleUseSuggestion}
                         className="underline hover:no-underline ml-1"
                       >
                         Use suggestion

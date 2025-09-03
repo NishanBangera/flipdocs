@@ -15,6 +15,7 @@ export interface Flipbook {
 
 export interface CreateFlipbookData {
   name: string;
+  slug: string; // Now required since we always provide it
   pdf: File;
   backgroundImage?: File;
   coverImage?: File;
@@ -23,6 +24,7 @@ export interface CreateFlipbookData {
 
 export interface UpdateFlipbookData {
   name?: string;
+  slug?: string;
   pdf?: File;
   backgroundImage?: File;
   coverImage?: File;
@@ -45,6 +47,12 @@ export interface ApiResponse<T> {
 export interface ApiError {
   message: string;
   status?: number;
+}
+
+export interface SlugValidationResult {
+  available: boolean;
+  suggestedSlug?: string;
+  existingSlugs: string[];
 }
 
 // UI-specific types for table display

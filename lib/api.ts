@@ -7,6 +7,7 @@ import {
   UpdateFlipbookData,
   DashboardStats,
   ApiResponse,
+  SlugValidationResult,
 } from './types';
 
 export class FlipbookApi {
@@ -40,6 +41,7 @@ export class FlipbookApi {
       const formData = new FormData();
       console.log("isPublished value:", data.isPublished, typeof data.isPublished);
       formData.append('name', data.name);
+      formData.append('slug', data.slug); // Always include slug (now required)
       formData.append('pdf', data.pdf);
       formData.append('isPublished', data.isPublished ? 'true' : 'false');
       console.log("check22222222222")
@@ -77,6 +79,7 @@ export class FlipbookApi {
       const formData = new FormData();
       
       if (data.name) formData.append('name', data.name);
+      if (data.slug) formData.append('slug', data.slug);
       if (data.pdf) formData.append('pdf', data.pdf);
       if (data.backgroundImage) formData.append('backgroundImage', data.backgroundImage);
   if (data.coverImage) formData.append('coverImage', data.coverImage);
@@ -127,6 +130,27 @@ export class FlipbookApi {
       }
       
       throw new Error(response.data.error || 'Failed to toggle publish status');
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  // Validate slug availability
+  async validateSlug(slug: string, excludeId?: string): Promise<SlugValidationResult> {
+    try {
+      const response = await this.apiClient.post<ApiResponse<SlugValidationResult>>(
+        '/flipbooks/validate-slug',
+        {
+          slug,
+          excludeId
+        }
+      );
+
+      if (response.data.data) {
+        return response.data.data;
+      }
+      
+      throw new Error(response.data.error || 'Failed to validate slug');
     } catch (error) {
       throw new Error(handleApiError(error));
     }

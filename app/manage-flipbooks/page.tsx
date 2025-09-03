@@ -33,6 +33,7 @@ const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => 
 export default function ManageFlipbooks() {
   const [currentPage, setCurrentPage] = useState(0);
   const { data: flipbooks = [], isLoading, error, refetch } = useFlipbooks();
+  console.log("Flipbooks dataaaaaaa:", flipbooks);
   const router = useRouter();
   
   // Get React Query hooks for table actions

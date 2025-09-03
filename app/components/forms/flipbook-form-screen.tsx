@@ -13,6 +13,7 @@ export interface FlipbookFormScreenProps {
   flipbook?: {
     id: string
     name: string
+    slug: string
     status: "published" | "unpublished"
     pdf_url: string
     background_image_url?: string

@@ -149,6 +149,7 @@ export function createBooksColumns(
       header: "Actions",
       cell: ({ row }) => {
         const flipbook = row.original;
+        console.log("flipbook in actions:", flipbook);
         const isPublished = flipbook.status === "published";
 
         const handleDelete = () => {

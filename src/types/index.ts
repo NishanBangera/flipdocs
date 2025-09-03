@@ -22,6 +22,7 @@ export interface Flipbook {
 
 export interface CreateFlipbookDTO {
   name: string;
+  slug: string; // Now required since frontend always provides it
   pdf: File;
   backgroundImage?: File;
   coverImage?: File;
@@ -30,6 +31,7 @@ export interface CreateFlipbookDTO {
 
 export interface UpdateFlipbookDTO {
   name?: string;
+  slug?: string;
   pdf?: File;
   backgroundImage?: File;
   coverImage?: File;

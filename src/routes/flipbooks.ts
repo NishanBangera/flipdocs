@@ -1,9 +1,30 @@
 import { Elysia, t } from 'elysia';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { FlipbookService } from '../services/flipbook.service';
+import { validateSlugAvailability } from '../utils/slug.utils';
 
 export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
   .use(authMiddleware)
+  
+  // Validate slug availability
+  .post('/validate-slug', async (ctx) => {
+    const { user, body } = ctx as any;
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const result = await validateSlugAvailability(body.slug, body.excludeId);
+      return { data: result };
+    } catch (error) {
+      return { error: 'Failed to validate slug' };
+    }
+  }, {
+    body: t.Object({
+      slug: t.String(),
+      excludeId: t.Optional(t.String())
+    })
+  })
   
   // Get all flipbooks for user
   .get('/', async (ctx) => {
@@ -57,6 +78,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
   }, {
     body: t.Object({
       name: t.String(),
+      slug: t.String(), // Now required
       pdf: t.File(),
       backgroundImage: t.Optional(t.File()),
   coverImage: t.Optional(t.File()),
@@ -89,6 +111,7 @@ export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
   }, {
     body: t.Object({
       name: t.Optional(t.String()),
+      slug: t.Optional(t.String()),
       pdf: t.Optional(t.File()),
       backgroundImage: t.Optional(t.File()),
   coverImage: t.Optional(t.File()),

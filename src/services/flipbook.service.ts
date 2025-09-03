@@ -5,9 +5,9 @@ import { Flipbook, CreateFlipbookDTO, UpdateFlipbookDTO } from '../types';
 
 export class FlipbookService {
   static async create(userId: string, data: CreateFlipbookDTO): Promise<Flipbook> {
-    // Generate unique slug
-    console.log("checkkkkkkkk233333333")
-    const slug = await generateUniqueSlug(data.name);
+    // Use the slug provided by the frontend (no automatic generation)
+    console.log("Creating flipbook with slug:", data.slug)
+    const slug = data.slug;
 
     // Upload PDF
     const pdfUrl = await StorageService.uploadPDF(data.pdf, userId);
@@ -61,10 +61,14 @@ export class FlipbookService {
       updated_at: new Date().toISOString()
     };
 
-    // Update name and regenerate slug if name changed
+    // Update name if changed
     if (data.name && data.name !== existingFlipbook.name) {
       updates.name = data.name;
-      updates.slug = await generateUniqueSlug(data.name);
+    }
+
+    // Update slug if provided (frontend validates uniqueness)
+    if (data.slug && data.slug !== existingFlipbook.slug) {
+      updates.slug = data.slug;
     }
 
     // Update PDF if provided

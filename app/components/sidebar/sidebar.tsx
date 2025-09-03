@@ -47,8 +47,14 @@ const sidebarNavItems = [
 
 function AppSidebar() {
     const pathname = usePathname();
-    const { state } = useSidebar();
+    const { state, isMobile, setOpenMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
+    const handleNavClick = () => {
+        if (isMobile) {
+            // Close mobile sidebar after navigation
+            setOpenMobile(false);
+        }
+    };
     
     return (
         <Sidebar collapsible="icon" className="h-full">
@@ -82,6 +88,7 @@ function AppSidebar() {
                                     tabIndex={item.disabled ? -1 : 0} 
                                     aria-disabled={item.disabled}
                                     className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'justify-start gap-3 w-full'} max-[1439px]:gap-2`}
+                                    onClick={handleNavClick}
                                 >
                                     <span className={`flex items-center text-green-500 justify-center opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 ${isCollapsed ? 'w-full' : 'w-5 h-5'} max-[1439px]:w-4 max-[1439px]:h-4`}>
                                         {item.icon}

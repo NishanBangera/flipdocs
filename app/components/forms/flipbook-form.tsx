@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
+// Publish toggle moved to header
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileDropzone } from "../file-dropzone"
 import { BookOpen, Loader2, RefreshCw } from "lucide-react"
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { useCreateFlipbook, useUpdateFlipbook } from "@/lib/hooks/use-flipbooks"
 import { useFlipbookApi } from "@/lib/api"
 import type { CreateFlipbookData, UpdateFlipbookData } from "@/lib/types"
+import { usePublish } from "../providers/publish.provider"
 
 export interface FlipbookFormProps {
   // Mode and data
@@ -36,7 +37,6 @@ export interface FlipbookFormProps {
   onPdfFileChange?: (file: File | null) => void
   onBackgroundFileChange?: (file: File | null) => void
   onCoverFileChange?: (file: File | null) => void
-  onIsPublishedChange?: (isPublished: boolean) => void
 }
 
 export function FlipbookForm({
@@ -49,7 +49,6 @@ export function FlipbookForm({
   onPdfFileChange,
   onBackgroundFileChange,
   onCoverFileChange,
-  onIsPublishedChange,
 }: FlipbookFormProps) {
   // Local media query hook for very small screens
   const useMediaQuery = (query: string) => {
@@ -74,9 +73,8 @@ export function FlipbookForm({
     message: string;
     suggestedSlug?: string;
   }>({ isValidating: false, isValid: true, message: "" })
-  const [isPublished, setIsPublished] = useState(
-    mode === "edit" ? flipbook?.status === "published" : true
-  )
+  // Publish is controlled in the header. For create, we'll read from context on submit.
+  const publishCtx = usePublish()
 
   const flipbookApi = useFlipbookApi()
   const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -135,7 +133,7 @@ export function FlipbookForm({
         setTimeout(() => slugInputRef.current?.focus(), 0)
       }
 
-    } catch (_error) {
+  } catch {
       setSlugValidation({
         isValidating: false,
         isValid: false,
@@ -225,7 +223,7 @@ export function FlipbookForm({
         suggestedSlug: result.suggestedSlug
       })
 
-    } catch (_error) {
+  } catch {
       // Fallback: just set the base slug and let normal validation handle it
       setSlug(baseSlug)
       onSlugChange?.(baseSlug)
@@ -280,14 +278,14 @@ export function FlipbookForm({
     if (!validate()) return
 
     try {
-      if (mode === "create") {
+    if (mode === "create") {
         const createData: CreateFlipbookData = {
           name: name.trim(),
           slug: slug.trim(),
           pdf: pdfFile!,
           backgroundImage: backgroundFile || undefined,
           coverImage: coverFile || undefined,
-          isPublished,
+      isPublished: publishCtx.createIsPublished,
         }
         await createFlipbook.mutateAsync(createData)
       } else {
@@ -301,8 +299,7 @@ export function FlipbookForm({
         }
         if (pdfFile) updateData.pdf = pdfFile
         if (backgroundFile) updateData.backgroundImage = backgroundFile
-        if (coverFile) updateData.coverImage = coverFile
-        updateData.isPublished = isPublished
+  if (coverFile) updateData.coverImage = coverFile
 
         await updateFlipbook.mutateAsync({ id: flipbook!.id, data: updateData })
       }
@@ -363,10 +360,7 @@ export function FlipbookForm({
     onCoverFileChange?.(file)
   }
 
-  const handleIsPublishedChange = (value: boolean) => {
-    setIsPublished(value)
-    onIsPublishedChange?.(value)
-  }
+  // Publish is controlled in header; no local handler
 
   // Check if form has changes in edit mode
   const hasChanges = useMemo(() => {
@@ -375,11 +369,10 @@ export function FlipbookForm({
     // Check if any field has changed from original values
     const nameChanged = name.trim() !== (flipbook?.name || "")
     const slugChanged = slug.trim() !== (flipbook?.slug || "")
-    const statusChanged = isPublished !== (flipbook?.status === "published")
     const hasNewFiles = pdfFile !== null || backgroundFile !== null || coverFile !== null
 
-    return nameChanged || slugChanged || statusChanged || hasNewFiles
-  }, [mode, name, slug, isPublished, pdfFile, backgroundFile, coverFile, flipbook])
+    return nameChanged || slugChanged || hasNewFiles
+  }, [mode, name, slug, pdfFile, backgroundFile, coverFile, flipbook])
   // Check if form is ready for submission
   const isReady = name.trim().length > 0 &&
     slug.trim().length > 0 &&
@@ -578,25 +571,7 @@ export function FlipbookForm({
           </div>
 
           {/* Publish Switch */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 rounded-lg border bg-secondary/30 p-3 sm:p-4 max-[424px]:p-2">
-            <div className="min-w-0">
-              <Label htmlFor="publish-now" className="mb-0 block text-sm sm:text-base">
-                Publish immediately
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                If off, you can publish later from Manage Flipbooks.
-              </p>
-            </div>
-            <div className="w-full sm:w-auto sm:ml-auto">
-              <Switch
-                id="publish-now"
-                checked={isPublished}
-                onCheckedChange={handleIsPublishedChange}
-                aria-label="Publish immediately"
-                disabled={isPending}
-              />
-            </div>
-          </div>
+          {/* Publish toggle moved to header */}
         </CardContent>
 
         <CardFooter className="w-full min-w-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-3 sm:mt-5 p-3 sm:p-5 md:p-6 max-[424px]:p-2">

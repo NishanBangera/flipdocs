@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { FileText, AlertTriangle } from "lucide-react"
 import { FlipbookForm } from "./flipbook-form"
 import { useRouter } from "next/navigation"
+import { usePublish } from "../providers/publish.provider"
 
 export interface FlipbookFormScreenProps {
   // Mode and data
@@ -40,9 +41,7 @@ export function FlipbookFormScreen({
   // State for preview sync and form data
   const [name, setName] = React.useState(mode === "edit" ? flipbook?.name || "" : "")
   const [pdfFile, setPdfFile] = React.useState<File | null>(null)
-  const [isPublished, setIsPublished] = React.useState(
-    mode === "edit" ? flipbook?.status === "published" : true
-  )
+  const { createIsPublished } = usePublish()
   const [pdfUrl, setPdfUrl] = React.useState<string | null>(null)
 
   // Handle PDF preview URL - prefer new file over existing URL
@@ -102,7 +101,6 @@ export function FlipbookFormScreen({
           onNameChange={setName}
           onPdfFileChange={setPdfFile}
           // Background and cover aren't used in preview; omit to avoid unused state
-          onIsPublishedChange={setIsPublished}
         />
       </div>
 
@@ -140,7 +138,9 @@ export function FlipbookFormScreen({
                     {currentPdfLabel}
                   </Badge>
                   <Badge variant="outline">
-                    {isPublished ? "Published" : "Draft"}
+                    {mode === "create"
+                      ? (createIsPublished ? "Published" : "Draft")
+                      : (flipbook?.status === "published" ? "Published" : "Draft")}
                   </Badge>
                 </div>
               </div>

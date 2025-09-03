@@ -1,4 +1,6 @@
+"use client";
 import { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Trash, Pencil, Copy, MoreHorizontal } from "lucide-react";
@@ -9,6 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { copyToClipboard } from "@/lib/utils/toast";
@@ -151,18 +164,7 @@ export function createBooksColumns(
         const flipbook = row.original;
         console.log("flipbook in actions:", flipbook);
         const isPublished = flipbook.status === "published";
-
-        const handleDelete = () => {
-          if (window.confirm(`Are you sure you want to delete "${flipbook.name}"?`)) {
-            deleteFlipbook(flipbook.id);
-          }
-        };
-
-        // const handleView = () => {
-        //   if (flipbook.pdf_url) {
-        //     window.open(flipbook.pdf_url, '_blank');
-        //   }
-        // };
+  const onConfirmDelete = () => deleteFlipbook(flipbook.id);
 
         const handleShare = () => {
           if (isPublished) {
@@ -175,7 +177,12 @@ export function createBooksColumns(
           <>
             {/* Below 1024px: show 3-dots menu */}
             <div className="lg:hidden">
-              <DropdownMenu>
+              {(() => {
+                const [menuOpen, setMenuOpen] = useState(false);
+                const [confirmOpen, setConfirmOpen] = useState(false);
+                return (
+                  <>
+                  <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -189,8 +196,13 @@ export function createBooksColumns(
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
-                    onClick={handleDelete}
                     disabled={isDeleteLoading(flipbook.id)}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      // Open the confirm dialog after closing the menu
+                      setConfirmOpen(true);
+                    }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash className="mr-2 h-4 w-4" /> Delete
@@ -205,7 +217,34 @@ export function createBooksColumns(
                     <Copy className="mr-2 h-4 w-4" /> Copy link
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenu>
+                  {/* Keep dialog mounted outside the menu so it doesn't unmount when menu closes */}
+                  <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete flipbook?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete{' '}
+                          {'"'}{flipbook.name}{'"'} and remove its data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleteLoading(flipbook.id)}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={onConfirmDelete}
+                          disabled={isDeleteLoading(flipbook.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  </>
+                );
+              })()}
             </div>
 
             {/* 1024px and above: show inline action icons */}
@@ -233,17 +272,41 @@ export function createBooksColumns(
                 <Copy className="h-4 w-4" />
               </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 p-0 text-destructive/80 hover:text-destructive"
-                onClick={handleDelete}
-                disabled={isDeleteLoading(flipbook.id)}
-                title="Delete flipbook"
-              >
-                <span className="sr-only">Delete</span>
-                <Trash className="h-4 w-4" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 p-0 text-destructive/80 hover:text-destructive"
+                    disabled={isDeleteLoading(flipbook.id)}
+                    title="Delete flipbook"
+                  >
+                    <span className="sr-only">Delete</span>
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete flipbook?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete{' '}
+                      {'"'}{flipbook.name}{'"'} and remove its data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleteLoading(flipbook.id)}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={onConfirmDelete}
+                      disabled={isDeleteLoading(flipbook.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </>
         );

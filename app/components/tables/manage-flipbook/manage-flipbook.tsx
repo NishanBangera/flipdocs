@@ -25,7 +25,7 @@ export function createBooksColumns(
     {
       accessorKey: "name",
       header: () => (
-        <div className="font-medium flex items-center gap-3">
+        <div className="font-medium flex items-center gap-3 py-1.5">
           <span>Book</span>
           <ArrowsSort size={15} className="text-muted-foreground" />
         </div>

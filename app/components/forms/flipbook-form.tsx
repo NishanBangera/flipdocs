@@ -274,7 +274,7 @@ export function FlipbookForm({
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="flex justify-end gap-2 mt-5">
           <Button 
             type="button" 
             variant="ghost" 

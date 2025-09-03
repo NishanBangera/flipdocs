@@ -51,7 +51,7 @@ function AppSidebar() {
     const isCollapsed = state === "collapsed";
     
     return (
-        <Sidebar collapsible="icon" className="h-full relative">
+        <Sidebar collapsible="icon" className="h-full">
             <SidebarHeader className={`${isCollapsed ? 'px-2 py-4' : 'px-4 py-6'}`}>
                 <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
                     <div className="flex items-center">

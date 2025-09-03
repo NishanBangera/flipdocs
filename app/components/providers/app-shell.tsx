@@ -15,7 +15,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <DynamicHeader />
 
         {/* Main content */}
-        <div className="flex-grow overflow-auto p-4">
+        <div className="flex-grow p-4">
           {children}
         </div>
       </SidebarInset>

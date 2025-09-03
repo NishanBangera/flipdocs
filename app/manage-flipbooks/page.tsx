@@ -59,10 +59,10 @@ export default function ManageFlipbooks() {
     return (
       <div>
         <div className="flex items-center justify-end mb-6">
-          <Button asChild className="flex items-center gap-2 cursor-pointer">
+      <Button asChild className="flex items-center gap-2 cursor-pointer">
             <Link href="/manage-flipbooks/create">
-              <Plus size={16} />
-              Create New Flipbook
+        <Plus size={16} />
+        <span className="max-[374px]:hidden">Create New Flipbook</span>
             </Link>
           </Button>
         </div>
@@ -77,7 +77,7 @@ export default function ManageFlipbooks() {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex-grow rounded-lg">
-        <DataTable
+  <DataTable
           data={tableData}
           columns={columns}
           isLoading={isLoading}

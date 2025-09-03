@@ -39,8 +39,6 @@ export function FlipbookFormScreen({
   // State for preview sync and form data
   const [name, setName] = React.useState(mode === "edit" ? flipbook?.name || "" : "")
   const [pdfFile, setPdfFile] = React.useState<File | null>(null)
-  const [backgroundFile, setBackgroundFile] = React.useState<File | null>(null)
-  const [coverFile, setCoverFile] = React.useState<File | null>(null)
   const [isPublished, setIsPublished] = React.useState(
     mode === "edit" ? flipbook?.status === "published" : true
   )
@@ -92,9 +90,9 @@ export function FlipbookFormScreen({
   }
 
   return (
-    <div className="h-full grid gap-6 md:grid-cols-5">
+    <div className="h-full grid gap-4 md:gap-6 lg:grid-cols-6 xl:grid-cols-5">
       {/* Form Section */}
-      <div className="h-full md:col-span-3">
+      <div className="h-full lg:col-span-3">
         <FlipbookForm
           mode={mode}
           flipbook={flipbook}
@@ -102,14 +100,13 @@ export function FlipbookFormScreen({
           onCancel={handleCancel}
           onNameChange={setName}
           onPdfFileChange={setPdfFile}
-          onBackgroundFileChange={setBackgroundFile}
-          onCoverFileChange={setCoverFile}
+          // Background and cover aren't used in preview; omit to avoid unused state
           onIsPublishedChange={setIsPublished}
         />
       </div>
 
-      {/* Preview Section */}
-      <aside className="h-full md:col-span-2">
+    {/* Preview Section */}
+  <aside className="h-full hidden lg:block lg:col-span-3 xl:col-span-2">
         <Card className="sticky top-6 flex flex-col h-full border-muted/40">
           <CardHeader>
             <CardTitle className="text-base">Preview</CardTitle>

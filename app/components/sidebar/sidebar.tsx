@@ -52,7 +52,7 @@ function AppSidebar() {
     
     return (
         <Sidebar collapsible="icon" className="h-full">
-            <SidebarHeader className={`${isCollapsed ? 'px-2 py-4' : 'px-4 py-6'}`}>
+            <SidebarHeader className={`${isCollapsed ? 'px-2 py-4' : 'px-4 py-6'} max-[1439px]:px-3 max-[1439px]:py-4`}>
                 <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
                     <div className="flex items-center">
                         {isCollapsed ? (
@@ -64,7 +64,7 @@ function AppSidebar() {
                 </div>
             </SidebarHeader>
             
-            <SidebarContent className={`${isCollapsed ? 'px-2' : 'px-3'}`}>
+            <SidebarContent className={`${isCollapsed ? 'px-2' : 'px-3'} max-[1439px]:px-2`}>
                 <SidebarMenu className="space-y-1">
                     {sidebarNavItems.map((item) => (
                         <SidebarMenuItem key={item.id}>
@@ -73,7 +73,7 @@ function AppSidebar() {
                                 size="lg"
                                 isActive={pathname === item.url || (item.isParent && pathname?.startsWith(item.url))}
                                 disabled={item.disabled}
-                                className={`h-[48px] text-[14px] ${isCollapsed ? 'px-0 justify-center' : 'px-3 justify-start gap-3'}`}
+                                className={`h-[48px] text-[14px] ${isCollapsed ? 'px-0 justify-center' : 'px-3 justify-start gap-3'} max-[1439px]:h-[44px]`}
                                 tooltip={item.label}
                             >
                                 <Link 
@@ -81,13 +81,13 @@ function AppSidebar() {
                                     target={item.external ? "_blank" : undefined} 
                                     tabIndex={item.disabled ? -1 : 0} 
                                     aria-disabled={item.disabled}
-                                    className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'justify-start gap-3 w-full'}`}
+                                    className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'justify-start gap-3 w-full'} max-[1439px]:gap-2`}
                                 >
-                                    <span className={`flex items-center text-green-500 justify-center opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 ${isCollapsed ? 'w-full' : 'w-5 h-5'}`}>
+                                    <span className={`flex items-center text-green-500 justify-center opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 ${isCollapsed ? 'w-full' : 'w-5 h-5'} max-[1439px]:w-4 max-[1439px]:h-4`}>
                                         {item.icon}
                                     </span>
                                     {!isCollapsed && (
-                                        <span className="opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100">
+                                        <span className="opacity-80 group-hover:opacity-100 group-data-[active=true]:opacity-100 max-[1439px]:text-[13px]">
                                             {item.label}
                                         </span>
                                     )}
@@ -100,7 +100,7 @@ function AppSidebar() {
             
             <SidebarSeparator className="mx-0" />
         
-            <SidebarFooter className={`${isCollapsed ? 'px-2 pb-2' : 'px-3 pb-2'}`}>
+            <SidebarFooter className={`${isCollapsed ? 'px-2 pb-2' : 'px-3 pb-2'} max-[1439px]:px-2`}>
                 <UserDetailsCard />
             </SidebarFooter>
             

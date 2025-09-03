@@ -13,6 +13,7 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  Row,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -23,7 +24,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import Pagination from "../sections/pagination/pagination.component";
 
-interface IDataTableProps<T> {
+interface IDataTableProps<T extends { id: string }> {
   data: T[];
   columns: ColumnDef<T>[];
   isLoading: boolean;
@@ -31,12 +32,12 @@ interface IDataTableProps<T> {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   onRowSelectionChange?: (selectedCount: number) => void;
-  renderExpandedRow?: (row: any) => React.ReactNode;
+  renderExpandedRow?: (row: Row<T>) => React.ReactNode;
 }
 
 import * as React from "react";
 
-export function DataTable<T>({
+export function DataTable<T extends { id: string }>({
   data = [],
   columns,
   currentPage,
@@ -75,7 +76,7 @@ export function DataTable<T>({
         pageSize: itemsPerPage,
       },
     },
-    getRowId: (row: any) => row.id,
+  getRowId: (row: T) => row.id,
     enableRowSelection: true,
   });
 
@@ -83,7 +84,7 @@ export function DataTable<T>({
 
   const paginate = useCallback(
     (pageNumber: number): void => {
-      setCurrentPage && setCurrentPage(pageNumber);
+      setCurrentPage(pageNumber);
     },
     [setCurrentPage]
   );
@@ -120,6 +121,9 @@ export function DataTable<T>({
                     {headerGroup.headers.map((header, index) => {
                       const isFirst = index === 0;
                       const isLast = index === headerGroup.headers.length - 1;
+                      const headerMeta = header.column.columnDef
+                        .meta as { headerClassName?: string } | undefined;
+                      const headerClassName = headerMeta?.headerClassName || "";
                       return (
                         <TableHead
                           key={header.id}
@@ -133,7 +137,7 @@ export function DataTable<T>({
                           }}
                           className={`border-transparent text-left p-2 ${
                             isFirst ? "rounded-l-sm" : ""
-                          } ${isLast ? "rounded-r-sm" : ""}`}
+                          } ${isLast ? "rounded-r-sm" : ""} ${headerClassName}`}
                         >
                           <div className="flex items-center justify-start w-full">
                             {header.isPlaceholder
@@ -161,24 +165,30 @@ export function DataTable<T>({
                         }
                         className={`data-[state=selected]:bg-gray-light data-[state=selected]:border-0 hover:bg-[#323232] transition-colors duration-200`}
                       >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            style={{
-                              width: cell.column.columnDef.size || "auto",
-                              minWidth:
-                                cell.column.columnDef.minSize || "100px",
-                              maxWidth: cell.column.columnDef.maxSize || "none",
-                            }}
-                          >
-                            <div className="text-wrap line-clamp-2">
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </div>
-                          </TableCell>
-                        ))}
+                        {row.getVisibleCells().map((cell) => {
+                          const cellMeta = cell.column.columnDef
+                            .meta as { cellClassName?: string } | undefined;
+                          const cellClassName = cellMeta?.cellClassName || "";
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              style={{
+                                width: cell.column.columnDef.size || "auto",
+                                minWidth:
+                                  cell.column.columnDef.minSize || "100px",
+                                maxWidth: cell.column.columnDef.maxSize || "none",
+                              }}
+                              className={cellClassName}
+                            >
+                              <div className="text-wrap line-clamp-2">
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </div>
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
                       {row.getIsExpanded() && renderExpandedRow && (
                         <TableRow>

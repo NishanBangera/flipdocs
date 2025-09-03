@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -47,6 +47,20 @@ export function FlipbookForm({
   onCoverFileChange,
   onIsPublishedChange,
 }: FlipbookFormProps) {
+  // Local media query hook for very small screens
+  const useMediaQuery = (query: string) => {
+    const [matches, setMatches] = useState(false)
+    useEffect(() => {
+      const mql = window.matchMedia(query)
+      const onChange = (e: MediaQueryListEvent) => setMatches(e.matches)
+      setMatches(mql.matches)
+      mql.addEventListener("change", onChange)
+      return () => mql.removeEventListener("change", onChange)
+    }, [query])
+    return matches
+  }
+
+  const isXs = useMediaQuery("(max-width: 424px)")
   // Initialize form state based on mode
   const [name, setName] = useState(mode === "edit" ? flipbook?.name || "" : "")
   const [isPublished, setIsPublished] = useState(
@@ -173,31 +187,35 @@ export function FlipbookForm({
     ? (isPending ? "Creating..." : "Create flipbook")
     : (isPending ? "Saving..." : "Save changes")
 
+  const pdfAttachmentLabel = mode === "edit" && !isXs
+    ? getFileNameFromUrl(flipbook?.pdf_url)
+    : undefined
+
   return (
-    <Card className="border-muted/40 h-full">
-      <CardHeader className="space-y-1">
+    <Card className="border-muted/40 h-full max-w-full">
+      <CardHeader className="space-y-1 p-3 sm:p-5 md:p-6 max-[424px]:p-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500 text-black">
+          <div className="flex h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 items-center justify-center rounded-md bg-emerald-500 text-black">
             <BookOpen className="h-4 w-4" />
           </div>
-          <CardTitle className="text-lg">Flipbook details</CardTitle>
+          <CardTitle className="text-sm sm:text-base md:text-lg">Flipbook details</CardTitle>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground">
           Keep names short and descriptive. PDF must be the final export.
         </p>
       </CardHeader>
 
       <form onSubmit={handleSubmit} className="flex-grow flex flex-col justify-between">
-        <CardContent className="space-y-6">
+  <CardContent className="space-y-3 sm:space-y-5 md:space-y-6 max-[424px]:space-y-2 p-3 sm:p-5 md:p-6 max-[424px]:p-2 min-w-0">
           {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="flipbook-name">Flipbook name</Label>
+            <Label htmlFor="flipbook-name" className="text-xs sm:text-sm md:text-base">Flipbook name</Label>
             <Input
               id="flipbook-name"
               placeholder="e.g. Autumn Catalog 2025"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className={errors.name ? "border-destructive" : ""}
+              className={cn(errors.name && "border-destructive", "text-sm sm:text-base h-9 sm:h-10")}
               disabled={isPending}
             />
             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
@@ -209,7 +227,7 @@ export function FlipbookForm({
               id="flipbook-pdf"
               label="PDF file"
               mode={mode}
-              attachmentLabel={getFileNameFromUrl(flipbook?.pdf_url)}
+              attachmentLabel={pdfAttachmentLabel}
               attachmentUrl={flipbook?.pdf_url}
               description="PDF only"
               accept="application/pdf"
@@ -255,30 +273,33 @@ export function FlipbookForm({
           </div>
 
           {/* Publish Switch */}
-          <div className="flex items-center justify-between rounded-lg border bg-secondary/30 p-3">
-            <div>
-              <Label htmlFor="publish-now" className="mb-0 block">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 rounded-lg border bg-secondary/30 p-3 sm:p-4 max-[424px]:p-2">
+            <div className="min-w-0">
+              <Label htmlFor="publish-now" className="mb-0 block text-sm sm:text-base">
                 Publish immediately
               </Label>
               <p className="text-xs text-muted-foreground">
                 If off, you can publish later from Manage Flipbooks.
               </p>
             </div>
-            <Switch
-              id="publish-now"
-              checked={isPublished}
-              onCheckedChange={handleIsPublishedChange}
-              aria-label="Publish immediately"
-              disabled={isPending}
-            />
+            <div className="w-full sm:w-auto sm:ml-auto">
+              <Switch
+                id="publish-now"
+                checked={isPublished}
+                onCheckedChange={handleIsPublishedChange}
+                aria-label="Publish immediately"
+                disabled={isPending}
+              />
+            </div>
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2 mt-5">
+  <CardFooter className="w-full min-w-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-3 sm:mt-5 p-3 sm:p-5 md:p-6 max-[424px]:p-2">
           <Button 
             type="button" 
             variant="ghost" 
             onClick={onCancel} 
+            className="text-sm sm:text-base w-full sm:w-auto"
             disabled={isPending}
           >
             Cancel
@@ -288,6 +309,7 @@ export function FlipbookForm({
             disabled={isPending || !isReady}
             className={cn(
               "bg-emerald-500 text-black hover:bg-emerald-400",
+              "text-sm sm:text-base w-full sm:w-auto",
               (!isReady || isPending) && "pointer-events-none opacity-60"
             )}
           >

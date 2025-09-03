@@ -66,7 +66,7 @@ export function DynamicHeader() {
         <Button asChild className="flex items-center gap-2 cursor-pointer">
           <Link href="/manage-flipbooks/create">
             <Plus size={16} />
-            Create New Flipbook
+            <span className="max-[374px]:hidden">Create New Flipbook</span>
           </Link>
         </Button>
       )}

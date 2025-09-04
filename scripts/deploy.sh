@@ -11,6 +11,18 @@ ENV_FILE=".env.production"
 BACKUP_DIR="backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 
+# Detect Docker Compose command
+if command -v "docker-compose" > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "Error: Neither 'docker-compose' nor 'docker compose' is available"
+    exit 1
+fi
+
+echo "Using Docker Compose command: $DOCKER_COMPOSE"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -57,9 +69,9 @@ create_backup() {
     print_status "Creating backup..."
     
     # Backup current containers (if they exist)
-    if docker compose -f "$DOCKER_COMPOSE_FILE" ps -q > /dev/null 2>&1; then
+    if $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" ps -q > /dev/null 2>&1; then
         print_status "Backing up current deployment..."
-        docker compose -f "$DOCKER_COMPOSE_FILE" ps > "$BACKUP_DIR/containers_${DATE}.txt"
+        $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" ps > "$BACKUP_DIR/containers_${DATE}.txt"
     fi
     
     # Backup environment file
@@ -73,25 +85,25 @@ create_backup() {
 # Function to pull latest images
 pull_images() {
     print_status "Pulling latest Docker images..."
-    docker compose -f "$DOCKER_COMPOSE_FILE" pull
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" pull
 }
 
 # Function to build images
 build_images() {
     print_status "Building Docker images..."
-    docker compose -f "$DOCKER_COMPOSE_FILE" build --no-cache
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" build --no-cache
 }
 
 # Function to stop existing services
 stop_services() {
     print_status "Stopping existing services..."
-    docker compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
 }
 
 # Function to start services
 start_services() {
     print_status "Starting services..."
-    docker compose -f "$DOCKER_COMPOSE_FILE" up -d
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" up -d
 }
 
 # Function to check service health
@@ -137,13 +149,13 @@ cleanup() {
 # Function to show logs
 show_logs() {
     print_status "Recent logs:"
-    docker compose -f "$DOCKER_COMPOSE_FILE" logs --tail=50
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" logs --tail=50
 }
 
 # Function to rollback
 rollback() {
     print_error "Deployment failed. Rolling back..."
-    docker compose -f "$DOCKER_COMPOSE_FILE" down
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" down
     
     # Restore from backup if available
     if [ -f "$BACKUP_DIR/.env.production_${DATE}" ]; then
@@ -186,7 +198,7 @@ main() {
     
     # Show service status
     echo -e "\n${GREEN}Service Status:${NC}"
-    docker compose -f "$DOCKER_COMPOSE_FILE" ps
+    $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" ps
     
     # Show recent logs
     show_logs
@@ -198,18 +210,18 @@ case "${1:-deploy}" in
         main
         ;;
     "logs")
-        docker compose -f "$DOCKER_COMPOSE_FILE" logs -f
+        $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" logs -f
         ;;
     "status")
-        docker compose -f "$DOCKER_COMPOSE_FILE" ps
+        $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" ps
         ;;
     "stop")
         print_status "Stopping all services..."
-        docker compose -f "$DOCKER_COMPOSE_FILE" down
+        $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" down
         ;;
     "restart")
         print_status "Restarting all services..."
-        docker compose -f "$DOCKER_COMPOSE_FILE" restart
+        $DOCKER_COMPOSE -f "$DOCKER_COMPOSE_FILE" restart
         ;;
     "health")
         check_health

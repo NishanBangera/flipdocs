@@ -1,13 +1,16 @@
 {
-  "name": "flipbook-backend",
+  "name": "@flipdocs/api",
   "version": "1.0.0",
-  "description": "",
+  "description": "FlipDocs API built with ElysiaJS and Bun",
   "main": "index.js",
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target bun",
     "start": "bun dist/index.js",
     "start:node": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "lint": "echo \"No linter configured\"",
+    "clean": "rm -rf dist .turbo",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

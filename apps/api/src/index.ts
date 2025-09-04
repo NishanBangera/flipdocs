@@ -26,7 +26,7 @@ const app = new Elysia()
   .use(publicFlipbookRoutes)
   .listen({
     port: process.env.PORT || 3000,
-    // hostname: '0.0.0.0'
+    hostname: '0.0.0.0'
   });
 
 const port = process.env.PORT || 3000;

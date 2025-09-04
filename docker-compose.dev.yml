@@ -1,3 +1,4 @@
+# Development Docker Compose - Simplified version for testing
 services:
   # Redis for caching and sessions
   redis:
@@ -10,12 +11,10 @@ services:
     networks:
       - flipdocs-network
 
-  # API Service (ElysiaJS with Bun)
+  # API Service (ElysiaJS with Bun) - Development mode
   api:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-      target: builder
+    image: oven/bun:1
+    working_dir: /app
     restart: always
     ports:
       - "3001:3001"
@@ -26,21 +25,17 @@ services:
     env_file:
       - .env.local
     volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./packages:/app/packages
+      - .:/app
     depends_on:
       - redis
     networks:
       - flipdocs-network
-    working_dir: /app/apps/api
-    command: ["bun", "src/index.ts"]
+    command: ["sh", "-c", "cd /app && bun install && bun --watch apps/api/src/index.ts"]
 
-  # Web Service (Next.js)
+  # Web Service (Next.js) - Development mode
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      target: installer
+    image: oven/bun:1
+    working_dir: /app
     restart: always
     ports:
       - "3000:3000"
@@ -49,17 +44,14 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:3001
       - PORT=3000
     volumes:
-      - ./apps/web:/app/apps/web
-      - ./packages:/app/packages
-      - /app/apps/web/node_modules
-      - /app/apps/web/.next
+      - .:/app
     depends_on:
       - api
     networks:
       - flipdocs-network
-    command: ["npm", "run", "dev"]
+    command: ["sh", "-c", "cd /app && bun install && cd apps/web && bun run dev"]
 
-  # Nginx (Development proxy)
+  # Nginx (Development proxy) - Optional
   nginx:
     image: nginx:alpine
     restart: always
@@ -74,6 +66,8 @@ services:
       - api
     networks:
       - flipdocs-network
+    profiles:
+      - proxy
 
 volumes:
   redis_data:

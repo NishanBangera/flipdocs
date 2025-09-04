@@ -1,14 +1,13 @@
-# Multi-stage Dockerfile for Next.js app in Turborepo
-FROM node:18-alpine AS base
+# Multi-stage Dockerfile for Next.js app in Turborepo with Bun
+FROM oven/bun:1 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y libc6-dev
 WORKDIR /app
 
 # Install Turbo
-RUN npm install -g turbo
+RUN bun install -g turbo
 
 # Copy the entire monorepo
 COPY . .
@@ -18,16 +17,17 @@ RUN turbo prune @flipdocs/web --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y libc6-dev
 WORKDIR /app
 
 # Install Turbo
-RUN npm install -g turbo
+RUN bun install -g turbo
 
 # First install the dependencies (this is done before copying the source code to better leverage Docker layer caching)
 COPY --from=deps /app/out/json/ .
-COPY --from=deps /app/out/package-lock.json ./package-lock.json
-RUN npm ci
+# Copy bun.lockb if it exists, otherwise skip
+RUN if [ -f /app/out/bun.lockb ]; then cp /app/out/bun.lockb ./; fi
+RUN bun install
 
 # Copy source code of isolated subworkspace
 COPY --from=deps /app/out/full/ .

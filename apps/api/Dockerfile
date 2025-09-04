@@ -29,7 +29,7 @@ COPY --from=deps /app/out/json/ .
 RUN if [ -f /app/out/bun.lockb ]; then cp /app/out/bun.lockb ./; fi
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy source code
 COPY --from=deps /app/out/full/ .

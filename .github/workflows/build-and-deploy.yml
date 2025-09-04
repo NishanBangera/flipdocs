@@ -1,4 +1,4 @@
-name: flipdocs
+name: Build and Push to GHCR
 
 on:
   push:
@@ -60,39 +60,5 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          # Navigate to the application directory
-          cd /opt/flipdocs || { echo "Application directory not found"; exit 1; }
-          
-          # Pull latest code (optional, if you want to update configs)
-          git pull origin main || echo "Git pull failed, continuing with deployment"
-          
-          # Log in to GitHub Container Registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
-          # Pull latest images
-          docker pull ghcr.io/${{ github.repository }}-api:latest
-          docker pull ghcr.io/${{ github.repository }}-web:latest
-          
-          # Update docker-compose to use GHCR images
-          export API_IMAGE="ghcr.io/${{ github.repository }}-api:latest"
-          export WEB_IMAGE="ghcr.io/${{ github.repository }}-web:latest"
-          
-          # Deploy using our deployment script
-          chmod +x scripts/deploy-from-registry.sh
-          ./scripts/deploy-from-registry.sh
+    - name: Image digest
+      run: echo "Image pushed successfully"

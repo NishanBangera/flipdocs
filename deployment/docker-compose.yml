@@ -1,0 +1,75 @@
+services:
+  # API Service - From GHCR
+  api:
+    image: ghcr.io/nishanbangera/flipdocs-api:latest
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+    networks:
+      - flipdocs-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Web Service - From GHCR  
+  web:
+    image: ghcr.io/nishanbangera/flipdocs-web:latest
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    env_file:
+      - .env.production
+    depends_on:
+      - api
+    networks:
+      - flipdocs-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - web
+      - api
+    networks:
+      - flipdocs-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - flipdocs-network
+
+volumes:
+  nginx_logs:
+  redis_data:
+
+networks:
+  flipdocs-network:
+    driver: bridge

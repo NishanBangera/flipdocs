@@ -1,0 +1,176 @@
+import { Elysia, t } from 'elysia';
+import { authMiddleware } from '../middleware/auth.middleware';
+import { FlipbookService } from '../services/flipbook.service';
+import { validateSlugAvailability } from '../utils/slug.utils';
+
+export const flipbookRoutes = new Elysia({ prefix: '/flipbooks' })
+  .use(authMiddleware)
+  
+  // Validate slug availability
+  .post('/validate-slug', async (ctx) => {
+    const { user, body } = ctx as any;
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const result = await validateSlugAvailability(body.slug, body.excludeId);
+      return { data: result };
+    } catch (error) {
+      return { error: 'Failed to validate slug' };
+    }
+  }, {
+    body: t.Object({
+      slug: t.String(),
+      excludeId: t.Optional(t.String())
+    })
+  })
+  
+  // Get all flipbooks for user
+  .get('/', async (ctx) => {
+    const { user } = ctx as any;
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const flipbooks = await FlipbookService.getAll(user.id);
+      return { data: flipbooks };
+    } catch (error) {
+      return { error: 'Failed to fetch flipbooks' };
+    }
+  })
+
+  // Get single flipbook by ID
+  .get('/:id', async (ctx) => {
+    const { user, params } = ctx as any;
+    
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const flipbook = await FlipbookService.getById(params.id, user.id);
+      if (!flipbook) {
+        return { error: 'Flipbook not found' };
+      }
+      return { data: flipbook };
+    } catch (error) {
+      return { error: 'Failed to fetch flipbook' };
+    }
+  })
+
+  // Create new flipbook
+  .post('/', async (ctx) => {
+    console.log('Creating flipbook2222:');
+    const { user, body } = ctx as any;
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      console.log('Creating flipbook:', body);
+      const flipbook = await FlipbookService.create(user.id, body);
+      return { data: flipbook };
+    } catch (error) {
+      return { error: 'Failed to create flipbook' };
+    }
+  }, {
+    body: t.Object({
+      name: t.String(),
+      slug: t.String(), // Now required
+      pdf: t.File(),
+      backgroundImage: t.Optional(t.File()),
+  coverImage: t.Optional(t.File()),
+      isPublished: t.String()
+    })
+  })
+
+  // Update flipbook
+  .put('/:id', async (ctx) => {
+    console.log("Updating Flipbook")
+    const { user, params, body } = ctx as any;
+    
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      // Coerce isPublished to boolean if present
+      const payload: any = { ...body };
+      if (payload.isPublished !== undefined) {
+        const v = payload.isPublished;
+        payload.isPublished = typeof v === 'string' ? v === 'true' || v === '1' || v === 'on' : !!v;
+      }
+      const flipbook = await FlipbookService.update(params.id, user.id, payload);
+      console.log('Updatingggg flipbook:', body);
+      return { data: flipbook };
+    } catch (error) {
+      return { error: 'Failed to update flipbook' };
+    }
+  }, {
+    body: t.Object({
+      name: t.Optional(t.String()),
+      slug: t.Optional(t.String()),
+      pdf: t.Optional(t.File()),
+      backgroundImage: t.Optional(t.File()),
+  coverImage: t.Optional(t.File()),
+      isPublished: t.Optional(t.Union([t.Boolean(), t.String()]))
+    })
+  })
+
+  // Delete flipbook
+  .delete('/:id', async (ctx) => {
+    const { user, params } = ctx as any;
+    
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      await FlipbookService.delete(params.id, user.id);
+      return { success: true };
+    } catch (error) {
+      return { error: 'Failed to delete flipbook' };
+    }
+  })
+
+  // Toggle publish status
+  .patch('/:id/toggle-publish', async (ctx) => {
+    const { user, params } = ctx as any;
+    
+    if (!user) {
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const flipbook = await FlipbookService.getById(params.id, user.id);
+      if (!flipbook) {
+        return { error: 'Flipbook not found' };
+      }
+
+      const updated = await FlipbookService.update(params.id, user.id, {
+        isPublished: !flipbook.is_published
+      });
+      
+      return { data: updated };
+    } catch (error) {
+      return { error: 'Failed to toggle publish status' };
+    }
+  });
+
+// Public route for viewing flipbooks
+export const publicFlipbookRoutes = new Elysia({ prefix: '/view' })
+  .get('/:slug', async ({ params }) => {
+    try {
+      const flipbook = await FlipbookService.getBySlug(params.slug);
+      
+      if (!flipbook) {
+        return { error: 'Flipbook not found or not published' };
+      }
+
+      return { data: flipbook };
+    } catch (error) {
+      return { error: 'Failed to fetch flipbook' };
+    }
+  });

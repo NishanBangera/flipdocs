@@ -39,61 +39,184 @@ else
     SUDO="sudo"
 fi
 
+# Detect OS first before any package operations
+detect_os() {
+    print_status "Detecting operating system..."
+    
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$NAME
+        VERSION_ID=$VERSION_ID
+        print_status "Detected: $OS $VERSION_ID"
+        
+        case $OS in
+            "Ubuntu"*|"Debian"*)
+                PKG_MANAGER="apt"
+                UPDATE_CMD="apt update"
+                INSTALL_CMD="apt install -y"
+                ;;
+            "Amazon Linux"*)
+                if [[ $VERSION_ID == "2023" ]]; then
+                    PKG_MANAGER="dnf"
+                    UPDATE_CMD="dnf update -y"
+                    INSTALL_CMD="dnf install -y"
+                else
+                    PKG_MANAGER="yum"
+                    UPDATE_CMD="yum update -y"
+                    INSTALL_CMD="yum install -y"
+                fi
+                ;;
+            "CentOS"*|"Red Hat"*|"Rocky"*|"AlmaLinux"*)
+                if command -v dnf > /dev/null 2>&1; then
+                    PKG_MANAGER="dnf"
+                    UPDATE_CMD="dnf update -y"
+                    INSTALL_CMD="dnf install -y"
+                else
+                    PKG_MANAGER="yum"
+                    UPDATE_CMD="yum update -y"
+                    INSTALL_CMD="yum install -y"
+                fi
+                ;;
+            *)
+                print_warning "Unknown OS: $OS. Attempting auto-detection..."
+                if command -v dnf > /dev/null 2>&1; then
+                    PKG_MANAGER="dnf"
+                    UPDATE_CMD="dnf update -y"
+                    INSTALL_CMD="dnf install -y"
+                elif command -v yum > /dev/null 2>&1; then
+                    PKG_MANAGER="yum"
+                    UPDATE_CMD="yum update -y"
+                    INSTALL_CMD="yum install -y"
+                else
+                    PKG_MANAGER="apt"
+                    UPDATE_CMD="apt update"
+                    INSTALL_CMD="apt install -y"
+                fi
+                ;;
+        esac
+    else
+        print_error "Cannot detect OS. Exiting."
+        exit 1
+    fi
+    
+    print_status "Using package manager: $PKG_MANAGER"
+}
+
 # Update system
 print_header "Updating System"
-$SUDO apt-get update
-$SUDO apt-get upgrade -y
+detect_os
+$SUDO $UPDATE_CMD
 
 # Install essential packages
 print_header "Installing Essential Packages"
-$SUDO apt-get install -y \
-    curl \
-    wget \
-    unzip \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    software-properties-common \
-    htop \
-    nano \
-    vim \
-    fail2ban \
-    ufw \
-    jq
+case $PKG_MANAGER in
+    "apt")
+        $SUDO $INSTALL_CMD \
+            curl \
+            wget \
+            unzip \
+            apt-transport-https \
+            ca-certificates \
+            gnupg \
+            lsb-release \
+            software-properties-common \
+            htop \
+            nano \
+            vim \
+            fail2ban \
+            ufw \
+            jq
+        ;;
+    "dnf"|"yum")
+        if [[ $OS == *"Amazon Linux"* ]]; then
+            # Amazon Linux 2023 specific packages
+            $SUDO $INSTALL_CMD \
+                curl \
+                wget \
+                unzip \
+                htop \
+                nano \
+                vim \
+                tar \
+                gzip \
+                jq \
+                firewalld
+        else
+            $SUDO $INSTALL_CMD \
+                curl \
+                wget \
+                unzip \
+                htop \
+                nano \
+                vim \
+                jq \
+                firewalld
+        fi
+        ;;
+esac
 
-# Install Docker
-print_header "Installing Docker"
-if ! command -v docker > /dev/null 2>&1; then
+# Function to install Docker
+install_docker() {
     print_status "Installing Docker..."
     
-    # Add Docker's official GPG key
-    $SUDO install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+    if command -v docker > /dev/null 2>&1; then
+        print_status "Docker already installed: $(docker --version)"
+        return
+    fi
     
-    # Add Docker repository
-    echo \
-      "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-      $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
-    
-    # Install Docker Engine
-    $SUDO apt-get update
-    $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    case $PKG_MANAGER in
+        "apt")
+            # Ubuntu/Debian Docker installation
+            $SUDO $UPDATE_CMD
+            $SUDO $INSTALL_CMD ca-certificates curl gnupg lsb-release
+            $SUDO mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+            $SUDO apt update
+            $SUDO $INSTALL_CMD docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            ;;
+        "dnf"|"yum")
+            if [[ $OS == *"Amazon Linux"* ]]; then
+                # Amazon Linux 2023 - use system Docker package
+                print_status "Installing Docker for Amazon Linux 2023..."
+                $SUDO $INSTALL_CMD docker
+                
+                # Install Docker Compose separately for Amazon Linux
+                print_status "Installing Docker Compose..."
+                $SUDO mkdir -p /usr/local/lib/docker/cli-plugins
+                COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+                $SUDO curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-compose
+                $SUDO chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+                
+                # Create symlink for backward compatibility
+                $SUDO ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+            else
+                # CentOS/RHEL/Rocky - use Docker CE repository
+                $SUDO $INSTALL_CMD yum-utils
+                $SUDO yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                $SUDO $INSTALL_CMD docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            fi
+            ;;
+    esac
+
+    # Start and enable Docker
+    $SUDO systemctl start docker
+    $SUDO systemctl enable docker
     
     # Add current user to docker group
     $SUDO usermod -aG docker $USER
     
-    print_status "Docker installed successfully"
-else
-    print_status "Docker is already installed"
-fi
+    print_status "Docker installed successfully: $(docker --version)"
+    print_warning "You may need to log out and back in for docker group permissions to take effect"
+}
 
-# Install Docker Compose standalone
+# Install Docker
+install_docker
+
+# Install Docker Compose standalone (for systems without docker-compose-plugin)
 print_header "Installing Docker Compose"
 if ! command -v docker-compose > /dev/null 2>&1; then
-    print_status "Installing Docker Compose..."
+    print_status "Installing Docker Compose standalone..."
     DOCKER_COMPOSE_VERSION="v2.21.0"
     $SUDO curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     $SUDO chmod +x /usr/local/bin/docker-compose
@@ -102,20 +225,48 @@ else
     print_status "Docker Compose is already installed"
 fi
 
-# Start and enable Docker
-$SUDO systemctl start docker
-$SUDO systemctl enable docker
-
 # Configure firewall
 print_header "Configuring Firewall"
-$SUDO ufw --force reset
-$SUDO ufw default deny incoming
-$SUDO ufw default allow outgoing
-$SUDO ufw allow ssh
-$SUDO ufw allow 22/tcp
-$SUDO ufw allow 80/tcp
-$SUDO ufw allow 443/tcp
-$SUDO ufw --force enable
+case $PKG_MANAGER in
+    "apt")
+        # Ubuntu/Debian - use ufw
+        if command -v ufw > /dev/null 2>&1; then
+            $SUDO ufw --force reset
+            $SUDO ufw default deny incoming
+            $SUDO ufw default allow outgoing
+            $SUDO ufw allow ssh
+            $SUDO ufw allow 22/tcp
+            $SUDO ufw allow 80/tcp
+            $SUDO ufw allow 443/tcp
+            $SUDO ufw --force enable
+            print_status "UFW firewall configured"
+        else
+            print_warning "UFW not available, skipping firewall configuration"
+        fi
+        ;;
+    "dnf"|"yum")
+        # Amazon Linux/CentOS/RHEL - use firewalld
+        if command -v firewall-cmd > /dev/null 2>&1; then
+            $SUDO systemctl start firewalld
+            $SUDO systemctl enable firewalld
+            $SUDO firewall-cmd --permanent --add-service=ssh
+            $SUDO firewall-cmd --permanent --add-service=http
+            $SUDO firewall-cmd --permanent --add-service=https
+            $SUDO firewall-cmd --reload
+            print_status "Firewalld configured"
+        else
+            print_warning "Firewalld not available, installing and configuring..."
+            $SUDO $INSTALL_CMD firewalld
+            $SUDO systemctl start firewalld
+            $SUDO systemctl enable firewalld
+            $SUDO firewall-cmd --permanent --add-service=ssh
+            $SUDO firewall-cmd --permanent --add-service=http
+            $SUDO firewall-cmd --permanent --add-service=https
+            $SUDO firewall-cmd --reload
+            print_status "Firewalld installed and configured"
+        fi
+        ;;
+esac
 
 # Create application directory
 print_header "Setting Up Application Directory"

@@ -12,7 +12,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo build --filter=docs^... && changeset publish"
+    "release": "turbo build --filter=docs^... && changeset publish",
+    "docker:build": "docker-compose -f docker-compose.prod.yml build",
+    "docker:up": "docker-compose -f docker-compose.prod.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.prod.yml down",
+    "docker:logs": "docker-compose -f docker-compose.prod.yml logs -f",
+    "deploy:registry": "chmod +x scripts/deploy-from-registry.sh && ./scripts/deploy-from-registry.sh",
+    "deploy:local": "chmod +x scripts/deploy.sh && ./scripts/deploy.sh",
+    "check:deployment": "chmod +x scripts/check-deployment-ready.sh && ./scripts/check-deployment-ready.sh",
+    "setup:ec2": "chmod +x scripts/setup-ec2.sh && ./scripts/setup-ec2.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",

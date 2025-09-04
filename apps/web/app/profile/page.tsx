@@ -1,21 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Button } from "../../components/ui/button";
 // import { Separator } from "@/components/ui/separator";
-import { useProfileApi } from "@/lib/hooks/use-profile";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
+import { useProfileApi } from "../../lib/hooks/use-profile";
+import { showErrorToast, showSuccessToast } from "../../lib/utils/toast";
 import { useUser } from "@clerk/nextjs";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 export default function ProfilePage() {
   const api = useProfileApi();

@@ -4,20 +4,13 @@ import { useState, useMemo } from "react";
 import { DataTable } from "../components/tables/table-component";
 import { createBooksColumns } from "../components/tables/manage-flipbook/manage-flipbook";
 import type { FlipbookTableItem } from "../components/tables/manage-flipbook/manage-flipbook";
-import { useFlipbooks, useTogglePublish, useDeleteFlipbook } from "@/lib/hooks/use-flipbooks";
-import { Button } from "@/components/ui/button";
+import { useFlipbooks, useTogglePublish, useDeleteFlipbook } from "../../lib/hooks/use-flipbooks";
+import { Button } from "../../components/ui/button";
 import { ErrorState } from "../components/ui/loading";
 import { Plus } from "lucide-react";
-import type { Flipbook } from "@/lib/types";
+import type { Flipbook } from "../../lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 // Transform backend data to table format
 const transformFlipbookToTableItem = (flipbook: Flipbook): FlipbookTableItem => ({

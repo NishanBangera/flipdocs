@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
   
+  // Set turbopack root to fix warnings
+  turbopack: {
+    root: '../../',
+  },
+  
   webpack: (config, { isServer }) => {
     // Handle Three.js on the server side
     if (isServer) {

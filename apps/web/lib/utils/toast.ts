@@ -23,7 +23,7 @@ export const copyToClipboard = async (text: string, successMessage?: string) => 
     await navigator.clipboard.writeText(text);
     showSuccessToast(successMessage || 'Copied to clipboard!');
     return true;
-  } catch (err) {
+  } catch {
     showErrorToast('Failed to copy to clipboard');
     return false;
   }

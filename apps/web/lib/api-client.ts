@@ -20,7 +20,6 @@ export const useApiClient = () => {
   const { getToken } = useAuth();
 
   // Memoize the API client to prevent recreation on every render
-  // Don't include getToken in dependencies since it's always a new reference
   const apiClient = useMemo(() => {
     const client = createApiClient();
 
@@ -65,6 +64,8 @@ export const useApiClient = () => {
     );
 
     return client;
+    // getToken is intentionally omitted from dependencies as it's captured fresh on each request
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array since getToken is captured fresh on each request
 
   return apiClient;

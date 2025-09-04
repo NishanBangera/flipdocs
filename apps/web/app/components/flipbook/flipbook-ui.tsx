@@ -55,12 +55,6 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
     };
   }, []);
 
-  const scrollAnimation = {
-    display: 'flex',
-    width: 'max-content',
-    animation: 'horizontal-scroll 80s linear infinite', // Increased duration to slow down the animation
-  };
-
   const keyframes = `
     @keyframes horizontal-scroll {
       0% {
@@ -278,7 +272,7 @@ const FullscreenToggle = () => {
 
   useEffect(() => {
     const handler = () => {
-      const fsEl = document.fullscreenElement || (document as any).webkitFullscreenElement;
+      const fsEl = document.fullscreenElement || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement;
       setIsFs(!!fsEl);
     };
     document.addEventListener('fullscreenchange', handler);
@@ -299,7 +293,7 @@ const FullscreenToggle = () => {
     const el = document.documentElement;
     try {
       if ('requestFullscreen' in el) await el.requestFullscreen();
-      else if ('webkitRequestFullscreen' in el) await (el as any).webkitRequestFullscreen();
+      else if ('webkitRequestFullscreen' in el) await (el as Element & { webkitRequestFullscreen(): Promise<void> }).webkitRequestFullscreen();
     } catch (e) {
       console.warn('Fullscreen request failed:', e);
     }
@@ -307,7 +301,7 @@ const FullscreenToggle = () => {
   const exit = async () => {
     try {
       if ('exitFullscreen' in document) await document.exitFullscreen();
-      else if ('webkitExitFullscreen' in document) await (document as any).webkitExitFullscreen();
+      else if ('webkitExitFullscreen' in document) await (document as Document & { webkitExitFullscreen(): Promise<void> }).webkitExitFullscreen();
     } catch (e) {
       console.warn('Fullscreen exit failed:', e);
     }

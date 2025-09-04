@@ -3,7 +3,7 @@
 import { useThree, useFrame } from "@react-three/fiber";
 import { useMemo, useEffect, useState, useRef } from "react";
 import { useAtom } from "jotai";
-import { pageAtom, pageSideAtom, zoomAtom } from "./flipbook-ui";
+import { pageSideAtom, zoomAtom } from "./flipbook-ui";
 import { easing } from "maath";
 import { FlipbookBook } from "./flipbook-book";
 import type * as THREE from "three";
@@ -114,7 +114,7 @@ export function FlipbookExperience({ pdfPages }: FlipbookExperienceProps) {
   });
 
   // Pointer/pan handlers (only active when click disabled)
-  const onPointerDown = (e: any) => {
+  const onPointerDown = (e: React.PointerEvent<THREE.Group>) => {
     if (clickEnabled) return;
     e.stopPropagation();
     // Avoid browser gestures on mobile while dragging
@@ -127,11 +127,11 @@ export function FlipbookExperience({ pdfPages }: FlipbookExperienceProps) {
     // Prefer capturing on the canvas element rather than the 3D object
     const canvas = gl?.domElement;
     if (canvas && 'setPointerCapture' in canvas) {
-      try { (canvas as any).setPointerCapture(e.pointerId); } catch {}
+      try { (canvas as HTMLCanvasElement).setPointerCapture(e.pointerId); } catch {}
     }
   };
 
-  const onPointerMove = (e: any) => {
+    const onPointerMove = (e: React.PointerEvent<THREE.Group>) => {
     if (!draggingRef.current || clickEnabled) return;
     // Convert CSS pixel delta to world units (account for DPR)
     const dxPx = e.clientX - dragStartRef.current.x;
@@ -168,7 +168,7 @@ export function FlipbookExperience({ pdfPages }: FlipbookExperienceProps) {
       panStartRef.current.x = panRef.current.x;
       panStartRef.current.y = panRef.current.y;
       if (canvas && 'setPointerCapture' in canvas) {
-        try { (canvas as any).setPointerCapture(ev.pointerId); } catch {}
+        try { (canvas as HTMLCanvasElement).setPointerCapture(ev.pointerId); } catch {}
       }
     };
     const canvasMove = (ev: PointerEvent) => {
@@ -190,15 +190,15 @@ export function FlipbookExperience({ pdfPages }: FlipbookExperienceProps) {
       panRef.current.y = panStartRef.current.y + dy;
     };
     if (canvas) {
-      canvas.addEventListener('pointerdown', canvasDown as any, { passive: false });
-      canvas.addEventListener('pointermove', canvasMove as any, { passive: false });
+      canvas.addEventListener('pointerdown', canvasDown as EventListener, { passive: false });
+      canvas.addEventListener('pointermove', canvasMove as EventListener, { passive: false });
     }
     return () => {
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       if (canvas) {
-        canvas.removeEventListener('pointerdown', canvasDown as any);
-        canvas.removeEventListener('pointermove', canvasMove as any);
+        canvas.removeEventListener('pointerdown', canvasDown as EventListener);
+        canvas.removeEventListener('pointermove', canvasMove as EventListener);
       }
     };
   }, [gl, viewport.width, viewport.height, size.width, size.height, clickEnabled, baseScale, zoom]);

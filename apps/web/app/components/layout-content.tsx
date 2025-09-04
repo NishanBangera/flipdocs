@@ -8,7 +8,7 @@ import { LoadingSpinner } from "./ui/loading";
 const FULLSCREEN_ROUTES = ['/sign-in', '/view'];
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded } = useUser();
   const pathname = usePathname();
 
   const isFullScreenRoute = FULLSCREEN_ROUTES.some(route => 

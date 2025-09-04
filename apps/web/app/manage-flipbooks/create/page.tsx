@@ -1,11 +1,4 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { FlipbookFormScreen } from "@/app/components/forms/flipbook-form-screen"
+import { FlipbookFormScreen } from "../../components/forms/flipbook-form-screen"
 
 export default function Page() {
   return (

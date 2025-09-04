@@ -4,7 +4,6 @@ import {
   Flipbook,
   CreateFlipbookData,
   UpdateFlipbookData,
-  DashboardStats,
 } from '../types';
 import { toast } from 'sonner';
 

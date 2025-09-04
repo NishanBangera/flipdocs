@@ -14,13 +14,16 @@ function getQueryClient() {
     defaultOptions: {
       queries: {
         staleTime: 60 * 1000, // 1 minute
-        retry: (failureCount, error: any) => {
+        retry: (failureCount, error: unknown) => {
           // Don't retry on 4xx errors except 408, 429
-          if (error?.response?.status >= 400 && error?.response?.status < 500) {
-            if (error?.response?.status === 408 || error?.response?.status === 429) {
-              return failureCount < 2;
+          if (error && typeof error === 'object' && 'response' in error) {
+            const response = (error as { response?: { status?: number } }).response;
+            if (response?.status && response.status >= 400 && response.status < 500) {
+              if (response.status === 408 || response.status === 429) {
+                return failureCount < 2;
+              }
+              return false;
             }
-            return false;
           }
           return failureCount < 3;
         },

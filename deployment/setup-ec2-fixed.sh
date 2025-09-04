@@ -232,11 +232,39 @@ setup_app_directory() {
     print_status "Downloading deployment configuration from GitHub..."
     BASE_URL="https://raw.githubusercontent.com/NishanBangera/flipdocs/main/deployment"
     
-    curl -fsSL "$BASE_URL/docker-compose.yml" -o docker-compose.yml
-    curl -fsSL "$BASE_URL/.env.production.template" -o .env.production.template
-    curl -fsSL "$BASE_URL/nginx.conf" -o nginx.conf
-    curl -fsSL "$BASE_URL/deploy.sh" -o deploy.sh
-    chmod +x deploy.sh
+    # Download each file with error checking
+    print_status "Downloading docker-compose.yml..."
+    if curl -fsSL "$BASE_URL/docker-compose.yml" -o docker-compose.yml; then
+        print_status "✓ docker-compose.yml downloaded"
+    else
+        print_error "Failed to download docker-compose.yml"
+        exit 1
+    fi
+    
+    print_status "Downloading .env.production.template..."
+    if curl -fsSL "$BASE_URL/.env.production.template" -o .env.production.template; then
+        print_status "✓ .env.production.template downloaded"
+    else
+        print_error "Failed to download .env.production.template"
+        exit 1
+    fi
+    
+    print_status "Downloading nginx.conf..."
+    if curl -fsSL "$BASE_URL/nginx.conf" -o nginx.conf; then
+        print_status "✓ nginx.conf downloaded"
+    else
+        print_error "Failed to download nginx.conf"
+        exit 1
+    fi
+    
+    print_status "Downloading deploy.sh..."
+    if curl -fsSL "$BASE_URL/deploy.sh" -o deploy.sh; then
+        chmod +x deploy.sh
+        print_status "✓ deploy.sh downloaded and made executable"
+    else
+        print_error "Failed to download deploy.sh"
+        exit 1
+    fi
     
     # Create SSL directory
     mkdir -p ssl logs

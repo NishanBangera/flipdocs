@@ -10,8 +10,8 @@ const isPublicRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  // Skip auth during build time
-  if (process.env.NODE_ENV === 'production' && !process.env.CLERK_SECRET_KEY?.startsWith('sk_live_')) {
+  // Skip auth during build time (when using placeholder keys)
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_test_build_placeholder") {
     return
   }
   

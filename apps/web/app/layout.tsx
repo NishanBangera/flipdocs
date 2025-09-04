@@ -25,9 +25,10 @@ const geistMono = Geist_Mono({
 //   description: "Create, manage, and share interactive flipbooks with ease",
 // };
 
-// Check if we have valid Clerk keys
+// Check if we have valid Clerk keys (only check public key since secret key won't be in build)
 const hasValidClerkKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
-                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_build_placeholder";
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_build_placeholder" &&
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_");
 
 export default function RootLayout({
   children,

@@ -41,13 +41,14 @@ COPY --from=deps /app/tsconfig.json.backup ./tsconfig.json
 COPY --from=deps /app/turbo.json.backup ./turbo.json
 
 # Set build-time environment variables to prevent build failures
+# These are placeholder values only for build time
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_build_placeholder"
-ENV CLERK_SECRET_KEY="sk_test_build_placeholder"
 ENV NEXT_PUBLIC_SUPABASE_URL="https://build.supabase.co"
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="build_placeholder"
 ENV DATABASE_URL="postgresql://build:placeholder@localhost:5432/build"
 ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
+# Note: CLERK_SECRET_KEY removed from build env for security
 
 # Build the project
 RUN turbo build --filter=@flipdocs/web...

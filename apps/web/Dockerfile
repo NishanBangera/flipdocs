@@ -40,6 +40,15 @@ COPY --from=deps /app/out/full/ .
 COPY --from=deps /app/tsconfig.json.backup ./tsconfig.json
 COPY --from=deps /app/turbo.json.backup ./turbo.json
 
+# Set build-time environment variables to prevent build failures
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_build_placeholder"
+ENV CLERK_SECRET_KEY="sk_test_build_placeholder"
+ENV NEXT_PUBLIC_SUPABASE_URL="https://build.supabase.co"
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="build_placeholder"
+ENV DATABASE_URL="postgresql://build:placeholder@localhost:5432/build"
+ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
+ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
+
 # Build the project
 RUN turbo build --filter=@flipdocs/web...
 
@@ -64,8 +73,8 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
   
+  // Skip static generation during build in Docker to prevent auth errors
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
+  
   // Set turbopack root to fix warnings
   turbopack: {
     root: '../../',

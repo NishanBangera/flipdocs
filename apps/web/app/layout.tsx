@@ -25,28 +25,42 @@ const geistMono = Geist_Mono({
 //   description: "Create, manage, and share interactive flipbooks with ease",
 // };
 
+// Check if we have valid Clerk keys
+const hasValidClerkKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_build_placeholder";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <RootProvider>
-              <LayoutContent>{children}</LayoutContent>
-            </RootProvider>
-            <Toaster richColors position="bottom-right" />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <RootProvider>
+            <LayoutContent>{children}</LayoutContent>
+          </RootProvider>
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
+      </body>
+    </html>
   );
+
+  // Only wrap with ClerkProvider if we have valid keys
+  if (hasValidClerkKeys) {
+    return (
+      <ClerkProvider>
+        {content}
+      </ClerkProvider>
+    );
+  }
+
+  // During build or when keys are placeholders, render without ClerkProvider
+  return content;
 }

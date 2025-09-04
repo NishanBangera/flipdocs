@@ -25,6 +25,9 @@ RUN bun install -g turbo
 
 # First install the dependencies (this is done before copying the source code to better leverage Docker layer caching)
 COPY --from=deps /app/out/json/ .
+# Copy root configuration files
+COPY --from=deps /app/out/full/tsconfig.json ./tsconfig.json
+COPY --from=deps /app/out/full/turbo.json ./turbo.json
 # Copy bun.lockb if it exists, otherwise skip
 RUN if [ -f /app/out/bun.lockb ]; then cp /app/out/bun.lockb ./; fi
 RUN bun install

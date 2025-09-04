@@ -232,49 +232,34 @@ setup_app_directory() {
     print_status "Downloading deployment configuration from GitHub..."
     BASE_URL="https://raw.githubusercontent.com/NishanBangera/flipdocs/main/deployment"
     
-    # Download each file with error checking
-    print_status "Downloading docker-compose.yml..."
-    if curl -fsSL "$BASE_URL/docker-compose.yml" -o docker-compose.yml; then
-        print_status "✓ docker-compose.yml downloaded"
+    # Download the files that actually exist in the repository
+    if curl -fsSL -L "$BASE_URL/docker-compose.yml" -o docker-compose.yml; then
+        print_status "Downloaded docker-compose.yml"
     else
-        print_error "Failed to download docker-compose.yml"
-        exit 1
+        print_warning "Could not download docker-compose.yml, creating basic version"
+        create_basic_docker_compose
     fi
-    
-    print_status "Downloading .env.production.template..."
-    if curl -fsSL "$BASE_URL/.env.production.template" -o .env.production.template; then
-        print_status "✓ .env.production.template downloaded"
+
+    if curl -fsSL -L "$BASE_URL/nginx.conf" -o nginx.conf; then
+        print_status "Downloaded nginx.conf"
     else
-        print_error "Failed to download .env.production.template"
-        exit 1
+        print_warning "Could not download nginx.conf, creating basic version"
+        create_basic_nginx_conf
     fi
-    
-    print_status "Downloading nginx.conf..."
-    if curl -fsSL "$BASE_URL/nginx.conf" -o nginx.conf; then
-        print_status "✓ nginx.conf downloaded"
-    else
-        print_error "Failed to download nginx.conf"
-        exit 1
-    fi
-    
-    print_status "Downloading deploy.sh..."
-    if curl -fsSL "$BASE_URL/deploy.sh" -o deploy.sh; then
+
+    if curl -fsSL -L "$BASE_URL/deploy.sh" -o deploy.sh; then
+        print_status "Downloaded deploy.sh"
         chmod +x deploy.sh
-        print_status "✓ deploy.sh downloaded and made executable"
     else
-        print_error "Failed to download deploy.sh"
-        exit 1
+        print_warning "Could not download deploy.sh, creating basic version"
+        create_basic_deploy_script
     fi
     
     # Create SSL directory
     mkdir -p ssl logs
     
-    # Create production environment file from template
-    if [ ! -f ".env.production" ]; then
-        cp .env.production.template .env.production
-        print_warning "Created .env.production from template"
-        print_warning "Please update the environment variables before deploying!"
-    fi
+    # Create basic environment file
+    create_env_file
     
     print_status "Deployment files downloaded successfully"
 }
@@ -358,6 +343,229 @@ EOF
     chmod +x setup-ssl.sh
     
     print_status "Helper scripts created successfully"
+}
+
+# Create basic docker-compose.yml if download fails
+create_basic_docker_compose() {
+    cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  web:
+    image: ghcr.io/nishanbangera/flipdocs-web:latest
+    container_name: flipdocs-web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - flipdocs-network
+
+  api:
+    image: ghcr.io/nishanbangera/flipdocs-api:latest
+    container_name: flipdocs-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    networks:
+      - flipdocs-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: flipdocs-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs:/var/log/nginx
+    depends_on:
+      - web
+      - api
+    networks:
+      - flipdocs-network
+
+networks:
+  flipdocs-network:
+    driver: bridge
+EOF
+}
+
+# Create basic nginx.conf if download fails
+create_basic_nginx_conf() {
+    cat > nginx.conf << 'EOF'
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream web {
+        server web:3000;
+    }
+
+    upstream api {
+        server api:3001;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+
+        client_max_body_size 50M;
+
+        location /api/ {
+            proxy_pass http://api/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location / {
+            proxy_pass http://web/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+
+    # SSL configuration (commented out by default)
+    # server {
+    #     listen 443 ssl http2;
+    #     server_name yourdomain.com;
+    #     ssl_certificate /etc/nginx/ssl/cert.pem;
+    #     ssl_certificate_key /etc/nginx/ssl/key.pem;
+    #     
+    #     client_max_body_size 50M;
+    #     
+    #     location /api/ {
+    #         proxy_pass http://api/;
+    #         proxy_set_header Host $host;
+    #         proxy_set_header X-Real-IP $remote_addr;
+    #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    #         proxy_set_header X-Forwarded-Proto $scheme;
+    #     }
+    #     
+    #     location / {
+    #         proxy_pass http://web/;
+    #         proxy_set_header Host $host;
+    #         proxy_set_header X-Real-IP $remote_addr;
+    #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    #         proxy_set_header X-Forwarded-Proto $scheme;
+    #     }
+    # }
+}
+EOF
+}
+
+# Create basic deploy script if download fails
+create_basic_deploy_script() {
+    cat > deploy.sh << 'EOF'
+#!/bin/bash
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+print_status() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+case "${1:-deploy}" in
+    "deploy"|"up")
+        print_status "Deploying FlipDocs..."
+        docker-compose pull
+        docker-compose up -d
+        print_status "Deployment complete!"
+        ;;
+    "stop"|"down")
+        print_status "Stopping FlipDocs..."
+        docker-compose down
+        ;;
+    "restart")
+        print_status "Restarting FlipDocs..."
+        docker-compose down
+        docker-compose pull
+        docker-compose up -d
+        ;;
+    "logs")
+        docker-compose logs -f "${2:-}"
+        ;;
+    "status")
+        docker-compose ps
+        ;;
+    *)
+        echo "Usage: $0 {deploy|stop|restart|logs|status}"
+        echo ""
+        echo "Commands:"
+        echo "  deploy   - Deploy/update application (default)"
+        echo "  stop     - Stop all services"
+        echo "  restart  - Restart all services"
+        echo "  logs     - View logs (optionally specify service)"
+        echo "  status   - Show service status"
+        exit 1
+        ;;
+esac
+EOF
+    chmod +x deploy.sh
+}
+
+# Create basic environment file
+create_env_file() {
+    if [ ! -f ".env.production" ]; then
+        cat > .env.production << 'EOF'
+# FlipDocs Production Environment Variables
+# Please update these values before deploying
+
+# Database Configuration
+DATABASE_URL=your_database_url_here
+
+# Authentication (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:3001
+API_PORT=3001
+
+# Storage Configuration
+STORAGE_BUCKET=flipdocs-storage
+
+# Security
+JWT_SECRET=your_jwt_secret_here
+
+# Other Configuration
+NODE_ENV=production
+PORT=3000
+EOF
+        print_warning "Created .env.production template"
+        print_warning "Please update the environment variables before deploying!"
+    fi
 }
 
 # Configure Docker daemon

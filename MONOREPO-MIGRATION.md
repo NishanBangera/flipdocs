@@ -1,6 +1,4 @@
-# FlipDocs Monorepo Migration Guide
-
-This document outlines the transformation of the FlipDocs project from a traditional multi-repository setup to a **Turborepo monorepo** structure.
+ 
 
 ## 📋 Overview
 

@@ -1,6 +1,4 @@
-# Docker Deployment Guide for FlipDocs
-
-This guide provides comprehensive instructions for deploying FlipDocs using Docker and Docker Compose on AWS EC2.
+ 
 
 ## 📋 Prerequisites
 

@@ -1,6 +1,4 @@
-# Multi-Stage Docker Implementation Guide
-
-This document explains the **multi-stage Docker and Docker Compose** implementation for the FlipDocs monorepo, designed for both development and production deployment on AWS.
+ 
 
 ## 📋 Overview
 

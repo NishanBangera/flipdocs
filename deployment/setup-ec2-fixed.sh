@@ -106,8 +106,15 @@ install_tools() {
             ;;
         "dnf"|"yum")
             if [[ $OS == *"Amazon Linux"* ]]; then
-                # Amazon Linux 2023 specific packages
-                sudo $INSTALL_CMD curl wget git htop nano vim unzip tar gzip
+                # Amazon Linux 2023 specific packages - handle curl conflict
+                print_status "Handling curl package conflict on Amazon Linux..."
+                # Check if curl-minimal is installed and replace it with full curl
+                if rpm -q curl-minimal > /dev/null 2>&1; then
+                    print_status "Replacing curl-minimal with full curl package..."
+                    sudo $INSTALL_CMD --allowerasing curl wget git htop nano vim unzip tar gzip
+                else
+                    sudo $INSTALL_CMD curl wget git htop nano vim unzip tar gzip
+                fi
             else
                 sudo $INSTALL_CMD curl wget git htop nano vim unzip
             fi

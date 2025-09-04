@@ -8,7 +8,7 @@ import { userRoutes } from './routes/user';
 
 const app = new Elysia()
   .use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true
   }))
   .use(swagger({
@@ -20,16 +20,28 @@ const app = new Elysia()
     }
   }))
   .get('/', () => 'Flipbook API is running!')
+  .get('/health', () => ({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  }))
+  .get('/debug/clerk', () => ({
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY?.substring(0, 20) + '...',
+    secretKeyPresent: !!process.env.CLERK_SECRET_KEY,
+    frontendUrl: process.env.FRONTEND_URL
+  }))
   .use(dashboardRoutes)
   .use(userRoutes)
   .use(flipbookRoutes)
   .use(publicFlipbookRoutes)
   .listen({
     port: process.env.PORT || 3000,
-    hostname: '0.0.0.0'
+    hostname: 'localhost'
   });
 
 const port = process.env.PORT || 3000;
-console.log(`🦊 Elysia is running at http://0.0.0.0:${port}`);
+console.log(`🦊 Elysia is running at http://localhost:${port}`);
 
 export default app;

@@ -13,6 +13,9 @@ export const authMiddleware = (app: Elysia) =>
         set.status = 401;
         return { user: null, error: 'No token provided' };
       }
+      
+      console.log('Verifying token with Clerk...');
+      
       // Verify the token with Clerk
       const sessionToken = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY!

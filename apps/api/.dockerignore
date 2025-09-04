@@ -1,10 +1,12 @@
-# Node modules
+# Node modules and dependencies
 node_modules
 npm-debug.log*
+bun.lockb
 
 # Environment files
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
@@ -25,8 +27,6 @@ pids
 
 # Coverage directory used by tools like istanbul
 coverage
-
-# nyc test coverage
 .nyc_output
 
 # Dependency directories
@@ -56,10 +56,25 @@ jspm_packages/
 .DS_Store
 Thumbs.db
 
-# Docker
-Dockerfile
+# Docker files (exclude from context)
+Dockerfile*
 .dockerignore
 
-# Misc
+# Documentation and config
 README.md
 .editorconfig
+
+# Tests
+__tests__
+*.test.*
+*.spec.*
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp
+temp
+
+# Turbo cache
+.turbo

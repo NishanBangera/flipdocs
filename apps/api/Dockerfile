@@ -1,55 +1,67 @@
-# Use the official Bun image as the base image for building
-FROM oven/bun:1 as builder
-
-# Set the working directory inside the container
+# Multi-stage Dockerfile for ElysiaJS API with Bun in Turborepo
+FROM oven/bun:1 AS base
 WORKDIR /app
 
-# Copy package.json and bun.lock (if exists) to the working directory
-COPY package.json bun.lock* ./
+# Install dependencies stage
+FROM base AS deps
+WORKDIR /app
 
-# Install dependencies using Bun
-RUN bun install --frozen-lockfile
+# Install Turbo
+RUN bun install -g turbo
 
-# Copy the source code to the working directory
+# Copy the entire monorepo
 COPY . .
 
-# Build the application
-RUN bun run build
+# Generate a partial monorepo with a pruned lockfile for the API
+RUN turbo prune @flipdocs/api --docker
 
-# Production stage - use a smaller Node.js image
-FROM node:18-alpine as production
-
-# Install bun in the production image
-RUN npm install -g bun
-
-# Set the working directory inside the container
+# Build stage
+FROM base AS builder
 WORKDIR /app
 
-# Copy package.json for production dependencies
-COPY package.json ./
+# Install Turbo
+RUN bun install -g turbo
 
-# Install only production dependencies using npm (fallback if bun not available)
-RUN npm install --only=production
+# Copy dependency files
+COPY --from=deps /app/out/json/ .
 
-# Copy the built application from the builder stage
-COPY --from=builder /app/dist ./dist
+# Copy bun.lockb if it exists
+RUN if [ -f /app/out/bun.lockb ]; then cp /app/out/bun.lockb ./; fi
 
-# Copy any other necessary files (like .env template)
-COPY --from=builder /app/src ./src
+# Install dependencies
+RUN bun install --frozen-lockfile
 
-# Expose the port the app runs on (Render typically uses 10000)
-EXPOSE 10000
+# Copy source code
+COPY --from=deps /app/out/full/ .
 
-# Set environment variables (these will be overridden by your hosting service)
+# Build the API
+RUN turbo build --filter=@flipdocs/api...
+
+# Production stage
+FROM base AS runner
+WORKDIR /app
+
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 --ingroup nodejs elysiajs
+
+# Copy the built application
+COPY --from=builder --chown=elysiajs:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=elysiajs:nodejs /app/apps/api/package.json ./apps/api/
+COPY --from=builder --chown=elysiajs:nodejs /app/node_modules ./node_modules
+
+USER elysiajs
+
+EXPOSE 3001
+
 ENV NODE_ENV=production
+ENV PORT=3001
 
-# Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+WORKDIR /app/apps/api
 
-# Change ownership of the app directory to the nodejs user
-RUN chown -R nextjs:nodejs /app
-USER nextjs
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD bun --version || exit 1
 
-# Command to run the application
-CMD ["bun", "dist/index.js"]
+# Start the application
+CMD ["bun", "run", "dist/index.js"]

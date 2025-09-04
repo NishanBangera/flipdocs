@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker
+  output: 'standalone',
+  
   webpack: (config, { isServer }) => {
     // Handle Three.js on the server side
     if (isServer) {

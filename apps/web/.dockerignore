@@ -1,0 +1,34 @@
+# Web app specific .dockerignore
+node_modules
+.next
+out
+.env*.local
+.env.development
+.env.test
+
+# Development files
+*.md
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+logs
+
+# Tests
+__tests__
+*.test.*
+*.spec.*
+coverage
+
+# Temporary files
+tmp
+temp
+
+# OS files
+.DS_Store
+Thumbs.db

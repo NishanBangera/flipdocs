@@ -1,0 +1,60 @@
+# Multi-stage Dockerfile for Next.js app in Turborepo
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install Turbo
+RUN npm install -g turbo
+
+# Copy the entire monorepo
+COPY . .
+
+# Generate a partial monorepo with a pruned lockfile for the web app
+RUN turbo prune @flipdocs/web --docker
+
+# Add lockfile and package.json's of isolated subworkspace
+FROM base AS installer
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install Turbo
+RUN npm install -g turbo
+
+# First install the dependencies (this is done before copying the source code to better leverage Docker layer caching)
+COPY --from=deps /app/out/json/ .
+COPY --from=deps /app/out/package-lock.json ./package-lock.json
+RUN npm ci
+
+# Copy source code of isolated subworkspace
+COPY --from=deps /app/out/full/ .
+
+# Build the project
+RUN turbo build --filter=@flipdocs/web...
+
+FROM base AS runner
+WORKDIR /app
+
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy the built application
+COPY --from=installer /app/apps/web/next.config.ts ./apps/web/
+COPY --from=installer /app/apps/web/package.json ./apps/web/
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+# Start the application
+CMD ["node", "apps/web/server.js"]

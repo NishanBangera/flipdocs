@@ -12,6 +12,10 @@ RUN bun install -g turbo
 # Copy the entire monorepo
 COPY . .
 
+# Save root config files before pruning
+RUN cp tsconfig.json tsconfig.json.backup
+RUN cp turbo.json turbo.json.backup
+
 # Generate a partial monorepo with a pruned lockfile for the web app
 RUN turbo prune @flipdocs/web --docker
 
@@ -25,15 +29,16 @@ RUN bun install -g turbo
 
 # First install the dependencies (this is done before copying the source code to better leverage Docker layer caching)
 COPY --from=deps /app/out/json/ .
-# Copy root configuration files
-COPY --from=deps /app/out/full/tsconfig.json ./tsconfig.json
-COPY --from=deps /app/out/full/turbo.json ./turbo.json
 # Copy bun.lockb if it exists, otherwise skip
 RUN if [ -f /app/out/bun.lockb ]; then cp /app/out/bun.lockb ./; fi
 RUN bun install
 
 # Copy source code of isolated subworkspace
 COPY --from=deps /app/out/full/ .
+
+# Copy root configuration files from backup
+COPY --from=deps /app/tsconfig.json.backup ./tsconfig.json
+COPY --from=deps /app/turbo.json.backup ./turbo.json
 
 # Build the project
 RUN turbo build --filter=@flipdocs/web...

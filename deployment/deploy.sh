@@ -117,11 +117,11 @@ check_env_file() {
     fi
     
     # Check for required variables
-    local required_vars=("DATABASE_URL" "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" "CLERK_SECRET_KEY")
+    local required_vars=("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" "CLERK_SECRET_KEY" "NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY" "SUPABASE_SERVICE_KEY")
     local missing_vars=()
     
     for var in "${required_vars[@]}"; do
-        if ! grep -q "^${var}=" "$ENV_FILE" || grep -q "^${var}=your_" "$ENV_FILE"; then
+        if ! grep -q "^${var}=" "$ENV_FILE" || grep -q "^${var}=your_" "$ENV_FILE" || grep -q "^${var}=.*xxxxxxxx" "$ENV_FILE"; then
             missing_vars+=("$var")
         fi
     done

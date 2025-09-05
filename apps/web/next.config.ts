@@ -10,7 +10,9 @@ const nextConfig: NextConfig = {
   
   // Set turbopack root to fix warnings
   turbopack: {
-    root: '../../',
+    root: process.env.NODE_ENV === 'development' && process.env.DOCKER_ENV 
+      ? '/app' 
+      : '../../',
   },
   
   webpack: (config, { isServer }) => {

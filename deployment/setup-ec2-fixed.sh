@@ -255,11 +255,21 @@ setup_app_directory() {
         create_basic_deploy_script
     fi
     
+    # Download environment template
+    if curl -fsSL -L "$BASE_URL/.env.production.template" -o .env.production.template; then
+        print_status "Downloaded .env.production.template"
+        if [ ! -f ".env.production" ]; then
+            cp .env.production.template .env.production
+            print_warning "Created .env.production from template"
+            print_warning "Please update the environment variables before deploying!"
+        fi
+    else
+        print_warning "Could not download .env.production.template, creating basic version"
+        create_env_file
+    fi
+    
     # Create SSL directory
     mkdir -p ssl logs
-    
-    # Create basic environment file
-    create_env_file
     
     print_status "Deployment files downloaded successfully"
 }
@@ -530,13 +540,13 @@ EOF
 create_env_file() {
     if [ ! -f ".env.production" ]; then
         cat > .env.production << 'EOF'
-# FlipDocs Production Environment Variables
-# Please update these values before deploying
+# FlipDocs Production Environment Configuration
+NODE_ENV=production
 
-# Database Configuration
-DATABASE_URL=your_database_url_here
+# Redis Configuration (for container communication)
+REDIS_URL=redis://redis:6379
 
-# Authentication (Clerk)
+# Clerk Authentication (Update with your Clerk keys)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
@@ -544,24 +554,14 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 
-# Supabase Configuration
+# Supabase Configuration (Update with your Supabase details)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3001
-API_PORT=3001
-
-# Storage Configuration
-STORAGE_BUCKET=flipdocs-storage
-
-# Security
-JWT_SECRET=your_jwt_secret_here
-
-# Other Configuration
-NODE_ENV=production
-PORT=3000
+# Application Configuration (Update yourdomain.com with your actual domain)
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://yourdomain.com/api
 EOF
         print_warning "Created .env.production template"
         print_warning "Please update the environment variables before deploying!"

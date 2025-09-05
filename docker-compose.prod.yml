@@ -6,9 +6,6 @@ services:
       dockerfile: apps/api/Dockerfile
       target: runner
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3001
     env_file:
       - .env.production
     depends_on:
@@ -38,9 +35,6 @@ services:
       dockerfile: apps/web/Dockerfile
       target: runner
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
     env_file:
       - .env.production
     depends_on:

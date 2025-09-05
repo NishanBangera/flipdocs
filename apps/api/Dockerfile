@@ -49,19 +49,10 @@ RUN turbo build --filter=@flipdocs/api...
 FROM base AS runner
 WORKDIR /app
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# Don't run production as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 --ingroup nodejs elysiajs
-
 # Copy the built application
-COPY --from=builder --chown=elysiajs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=elysiajs:nodejs /app/apps/api/package.json ./apps/api/
-COPY --from=builder --chown=elysiajs:nodejs /app/node_modules ./node_modules
-
-USER elysiajs
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3001
 
@@ -69,10 +60,6 @@ ENV NODE_ENV=production
 ENV PORT=3001
 
 WORKDIR /app/apps/api
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
 
 # Start the application
 CMD ["bun", "run", "dist/index.js"]

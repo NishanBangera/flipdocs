@@ -1,3 +1,7 @@
+# FlipDocs Development Docker Compose
+# This file is used for local development with live reloading and debugging
+# Usage: docker-compose up -d
+
 services:
   # Redis for caching and sessions
   redis:

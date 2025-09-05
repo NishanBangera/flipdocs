@@ -1,3 +1,7 @@
+# FlipDocs Production Docker Compose
+# This file is used for production deployments with pre-built images from GHCR
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 services:
   # API Service (ElysiaJS with Bun)
   api:

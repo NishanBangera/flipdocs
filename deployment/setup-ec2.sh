@@ -233,10 +233,10 @@ setup_app_directory() {
     BASE_URL="https://raw.githubusercontent.com/NishanBangera/flipdocs/main/deployment"
     
     # Download the files that actually exist in the repository
-    if curl -fsSL -L "$BASE_URL/docker-compose.yml" -o docker-compose.yml; then
-        print_status "Downloaded docker-compose.yml"
+    if curl -fsSL -L "https://raw.githubusercontent.com/NishanBangera/flipdocs/main/docker-compose.prod.yml" -o docker-compose.prod.yml; then
+        print_status "Downloaded docker-compose.prod.yml"
     else
-        print_warning "Could not download docker-compose.yml, creating basic version"
+        print_warning "Could not download docker-compose.prod.yml, creating basic version"
         create_basic_docker_compose
     fi
 
@@ -286,7 +286,7 @@ create_helper_scripts() {
 BASE_URL="https://raw.githubusercontent.com/NishanBangera/flipdocs/main/deployment"
 
 echo "Updating deployment files..."
-curl -fsSL "$BASE_URL/docker-compose.yml" -o docker-compose.yml
+curl -fsSL "https://raw.githubusercontent.com/NishanBangera/flipdocs/main/docker-compose.prod.yml" -o docker-compose.prod.yml
 curl -fsSL "$BASE_URL/nginx.conf" -o nginx.conf
 curl -fsSL "$BASE_URL/deploy.sh" -o deploy.sh
 chmod +x deploy.sh

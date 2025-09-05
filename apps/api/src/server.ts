@@ -6,6 +6,8 @@ import { flipbookRoutes, publicFlipbookRoutes } from './routes/flipbooks';
 import { dashboardRoutes } from './routes/dashboard';
 import { userRoutes } from './routes/user';
 
+const port = parseInt(process.env.PORT || '3000', 10);
+
 const app = new Elysia()
   .use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -45,7 +47,10 @@ const app = new Elysia()
   .use(dashboardRoutes)
   .use(userRoutes)
   .use(flipbookRoutes)
-  .use(publicFlipbookRoutes);
+  .use(publicFlipbookRoutes)
+  .listen({
+    port: port,
+    hostname: '0.0.0.0'
+  });
 
-// Do not start server in index.ts - this is just the app definition
-export default app;
+console.log(`🦊 Elysia is running at http://0.0.0.0:${port}`);

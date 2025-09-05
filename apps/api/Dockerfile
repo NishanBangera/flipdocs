@@ -62,4 +62,4 @@ ENV PORT=3001
 WORKDIR /app/apps/api
 
 # Start the application
-CMD ["bun", "run", "dist/index.js"]
+CMD ["bun", "run", "dist/server.js"]

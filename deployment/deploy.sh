@@ -97,7 +97,7 @@ pull_images() {
 
 # Function to update docker-compose with latest images
 update_compose_images() {
-    print_status "Updating docker-compose.yml with latest image tags..."
+    print_status "Updating $DOCKER_COMPOSE_FILE with latest image tags..."
     
     # Use sed to update image tags (works on both Linux and macOS)
     sed -i.bak "s|image: ${REGISTRY}/${REPO_OWNER}/${REPO_NAME}-api:.*|image: ${REGISTRY}/${REPO_OWNER}/${REPO_NAME}-api:latest|g" "$DOCKER_COMPOSE_FILE"

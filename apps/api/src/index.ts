@@ -22,6 +22,16 @@ const app = new Elysia()
   .get('/', () => 'Flipbook API is running!')
   .get('/health', () => ({
     status: 'healthy',
+    auth: {
+      clerk: {
+        configured: !!process.env.CLERK_SECRET_KEY
+      }
+    },
+    database: {
+      supabase: {
+        configured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
+      }
+    },
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
@@ -35,13 +45,18 @@ const app = new Elysia()
   .use(dashboardRoutes)
   .use(userRoutes)
   .use(flipbookRoutes)
-  .use(publicFlipbookRoutes)
-  .listen({
-    port: process.env.PORT || 3000,
+  .use(publicFlipbookRoutes);
+
+const port = parseInt(process.env.PORT || '3000', 10);
+
+// Only start the server if this module is being run directly
+if (import.meta.main) {
+  app.listen({
+    port: port,
     hostname: '0.0.0.0'
   });
-
-const port = process.env.PORT || 3000;
-console.log(`🦊 Elysia is running at http://0.0.0.0:${port}`);
+  
+  console.log(`🦊 Elysia is running at http://0.0.0.0:${port}`);
+}
 
 export default app;

@@ -9,7 +9,7 @@ set -e
 REPO_OWNER="nishanbangera"
 REPO_NAME="flipdocs"
 REGISTRY="ghcr.io"
-DOCKER_COMPOSE_FILE="docker-compose.yml"
+DOCKER_COMPOSE_FILE="docker-compose.prod.yml"
 ENV_FILE=".env.production"
 
 # Colors

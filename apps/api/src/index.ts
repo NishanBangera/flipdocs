@@ -38,10 +38,10 @@ const app = new Elysia()
   .use(publicFlipbookRoutes)
   .listen({
     port: process.env.PORT || 3000,
-    hostname: 'localhost'
+    hostname: '0.0.0.0'
   });
 
 const port = process.env.PORT || 3000;
-console.log(`🦊 Elysia is running at http://localhost:${port}`);
+console.log(`🦊 Elysia is running at http://0.0.0.0:${port}`);
 
 export default app;

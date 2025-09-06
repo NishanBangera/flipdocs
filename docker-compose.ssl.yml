@@ -1,7 +1,7 @@
 name: flipdocs-ssl
 services:
   api:
-    image: ${REGISTRY}/${API_IMAGE}
+    image: ${GHCR_REGISTRY}/${GITHUB_USERNAME}/flipdocs-api:${IMAGE_TAG:-latest}
     container_name: flipdocs-api
     volumes:
       - ./data/storage:/app/storage
@@ -17,9 +17,14 @@ services:
       # CORS Configuration
       - FRONTEND_URL=https://flipbook.ironasylum.in
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web:
-    image: ${REGISTRY}/${WEB_IMAGE}
+    image: ${GHCR_REGISTRY}/${GITHUB_USERNAME}/flipdocs-web:${IMAGE_TAG:-latest}
     container_name: flipdocs-web
     environment:
       - NODE_ENV=production
@@ -34,6 +39,11 @@ services:
       - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   nginx:
     image: nginx:alpine
@@ -49,6 +59,11 @@ services:
       - web
       - api
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   certbot:
     image: certbot/certbot:latest

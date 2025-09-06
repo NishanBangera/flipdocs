@@ -1,4 +1,4 @@
-name: Build and Deploy to EC2
+name: Build and Deploy to EC2 with SSL
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository_owner }}/flipdocs
 
 jobs:
   build-and-push:
@@ -64,62 +64,96 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - name: Deploy to EC2
+    - name: Deploy to EC2 with SSL
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
+        username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           set -e
-          cd /home/ec2-user/flipdocs
+          cd ${{ secrets.EC2_DEPLOYMENT_PATH }}
           
-          # Verify deployment directory exists
-          if [ ! -f docker-compose.prod.yml ]; then
-            echo "❌ Error: docker-compose.prod.yml not found in /home/ec2-user/flipdocs"
-            echo "📝 Please run manual deployment setup first:"
-            echo "   https://github.com/${{ github.repository }}/blob/main/DEPLOYMENT-GUIDE.md"
+          # Verify SSL deployment directory exists
+          if [ ! -f docker-compose.ssl.yml ]; then
+            echo "❌ Error: docker-compose.ssl.yml not found in ${{ secrets.EC2_DEPLOYMENT_PATH }}"
+            echo "📝 Please run SSL deployment setup first:"
+            echo "   curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash"
+            exit 1
+          fi
+          
+          # Verify environment file exists
+          if [ ! -f .env ]; then
+            echo "❌ Error: .env file not found"
+            echo "📝 Please configure environment variables first"
             exit 1
           fi
           
           # Clean old images
-          REGISTRY=$(grep '^REGISTRY=' .env | sed 's/REGISTRY=//' || echo 'ghcr.io/${{ github.repository_owner }}')
-          echo "🧹 Cleaning old images from $REGISTRY"
-          for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTRY 2>/dev/null || true); do
+          echo "🧹 Cleaning old images"
+          for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'ghcr.io/${{ github.repository_owner }}/flipdocs' 2>/dev/null || true); do
             docker rmi $image 2>/dev/null || true
           done
           
           # Pull latest images
           echo "📥 Pulling latest images"
-          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.ssl.yml pull
           
           # Restart containers with health check
           echo "🔄 Restarting containers"
-          docker-compose -f docker-compose.prod.yml up -d
+          docker-compose -f docker-compose.ssl.yml up -d
           
           # Wait for services to be ready
           echo "⏳ Waiting for services to start..."
-          sleep 10
+          sleep 15
           
-          # Health check
+          # Health checks for SSL deployment
           echo "🏥 Running health checks"
-          if curl -f http://localhost/api/health > /dev/null 2>&1; then
-            echo "✅ API health check passed"
+          
+          # Check if containers are running
+          if docker-compose -f docker-compose.ssl.yml ps | grep -q "Up"; then
+            echo "✅ Containers are running"
           else
-            echo "⚠️ API health check failed, checking logs:"
-            docker-compose -f docker-compose.prod.yml logs api --tail=10
+            echo "❌ Some containers are not running:"
+            docker-compose -f docker-compose.ssl.yml ps
+            exit 1
           fi
           
-          if curl -f http://localhost > /dev/null 2>&1; then
-            echo "✅ Web interface check passed"
+          # Test HTTPS health check
+          if curl -f -k https://localhost/health > /dev/null 2>&1; then
+            echo "✅ HTTPS health check passed"
+          elif curl -f http://localhost/health > /dev/null 2>&1; then
+            echo "⚠️ HTTP health check passed (SSL might be in setup)"
           else
-            echo "⚠️ Web interface check failed, checking logs:"
-            docker-compose -f docker-compose.prod.yml logs web --tail=10
+            echo "⚠️ Health check failed, checking logs:"
+            docker-compose -f docker-compose.ssl.yml logs web --tail=10
+          fi
+          
+          # Test API health check
+          if curl -f -k https://localhost/api/health > /dev/null 2>&1; then
+            echo "✅ API HTTPS health check passed"
+          elif curl -f http://localhost/api/health > /dev/null 2>&1; then
+            echo "⚠️ API HTTP health check passed (SSL might be in setup)"
+          else
+            echo "⚠️ API health check failed, checking logs:"
+            docker-compose -f docker-compose.ssl.yml logs api --tail=10
+          fi
+          
+          # Check SSL certificate status
+          if [ -f certbot/conf/live/flipbook.ironasylum.in/fullchain.pem ]; then
+            echo "✅ SSL certificate found"
+            echo "📅 Certificate expires:"
+            openssl x509 -in certbot/conf/live/flipbook.ironasylum.in/fullchain.pem -noout -dates | grep notAfter || true
+          else
+            echo "⚠️ SSL certificate not found - run SSL setup if needed"
           fi
           
           # Show final status
-          docker-compose -f docker-compose.prod.yml ps
+          echo "📊 Container status:"
+          docker-compose -f docker-compose.ssl.yml ps
           
           echo "🎉 Deployment complete!"
-          echo "🌐 Application accessible at: http://${{ secrets.EC2_HOST }}"
-          echo "🔍 Health endpoint: http://${{ secrets.EC2_HOST }}/api/health"
+          echo "🌐 Application should be accessible at: https://flipbook.ironasylum.in"
+          echo "🔍 Health endpoints:"
+          echo "   - https://flipbook.ironasylum.in/health"
+          echo "   - https://flipbook.ironasylum.in/api/health"

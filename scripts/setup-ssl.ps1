@@ -1,5 +1,6 @@
 # FlipDocs SSL Certificate Setup Script (PowerShell)
 # This script sets up Let's Encrypt SSL certificates for flipbook.ironasylum.in
+# Designed for EC2 deployment with GHCR container images
 
 param(
     [string]$Mode = "--dry-run"
@@ -7,9 +8,10 @@ param(
 
 $Domain = "flipbook.ironasylum.in"
 $Email = if ($env:SSL_EMAIL) { $env:SSL_EMAIL } else { "admin@ironasylum.in" }
+$ComposeFile = "docker-compose.ssl.yml"
 
-Write-Host "🔒 FlipDocs SSL Certificate Setup" -ForegroundColor Green
-Write-Host "=================================" -ForegroundColor Green
+Write-Host "🔒 FlipDocs SSL Certificate Setup (GHCR Deployment)" -ForegroundColor Green
+Write-Host "====================================================" -ForegroundColor Green
 Write-Host "Domain: $Domain" -ForegroundColor Cyan
 Write-Host "Email: $Email" -ForegroundColor Cyan
 Write-Host "Mode: $Mode" -ForegroundColor Cyan
@@ -24,8 +26,16 @@ try {
 }
 
 # Check if the SSL compose file exists
-if (-not (Test-Path "docker-compose.ssl.yml")) {
-    Write-Host "❌ Error: docker-compose.ssl.yml not found" -ForegroundColor Red
+if (-not (Test-Path $ComposeFile)) {
+    Write-Host "❌ Error: $ComposeFile not found" -ForegroundColor Red
+    Write-Host "📝 Make sure you have the deployment files on your EC2 instance" -ForegroundColor Yellow
+    exit 1
+}
+
+# Check if .env file exists
+if (-not (Test-Path ".env")) {
+    Write-Host "❌ Error: .env file not found" -ForegroundColor Red
+    Write-Host "📝 Please copy .env.ssl.example to .env and configure it" -ForegroundColor Yellow
     exit 1
 }
 
@@ -33,37 +43,51 @@ if (-not (Test-Path "docker-compose.ssl.yml")) {
 Write-Host "📁 Creating certificate directories..." -ForegroundColor Yellow
 New-Item -ItemType Directory -Force -Path "certbot\www" | Out-Null
 New-Item -ItemType Directory -Force -Path "certbot\conf" | Out-Null
+New-Item -ItemType Directory -Force -Path "data\storage" | Out-Null
+
+# Pull latest images from GHCR
+Write-Host "📦 Pulling latest container images from GHCR..." -ForegroundColor Yellow
+docker-compose -f $ComposeFile pull
 
 # Start nginx with initial configuration
 Write-Host "🚀 Starting nginx with initial configuration..." -ForegroundColor Yellow
-docker-compose -f docker-compose.ssl.yml up -d nginx
+docker-compose -f $ComposeFile up -d nginx
 
 # Wait for nginx to be ready
 Write-Host "⏳ Waiting for nginx to be ready..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
+# Check if nginx is responding
+try {
+    $response = Invoke-WebRequest -Uri "http://localhost/.well-known/acme-challenge/" -TimeoutSec 5 -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "⚠️  Note: Nginx ACME challenge endpoint check failed, but continuing..." -ForegroundColor Yellow
+}
+
 # Generate SSL certificate
 Write-Host "🔐 Generating SSL certificate..." -ForegroundColor Yellow
 if ($Mode -eq "--dry-run") {
     Write-Host "🧪 Running in dry-run mode (test mode)..." -ForegroundColor Cyan
-    $result = docker-compose -f docker-compose.ssl.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
+    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
 } else {
     Write-Host "🎯 Running in production mode..." -ForegroundColor Cyan
-    $result = docker-compose -f docker-compose.ssl.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
+    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
 }
 
 if ($LASTEXITCODE -eq 0) {
     if ($Mode -eq "--dry-run") {
         Write-Host "✅ Dry run successful! You can now run without --dry-run flag:" -ForegroundColor Green
-        Write-Host "   .\scripts\setup-ssl.ps1 --force-renewal" -ForegroundColor White
+        Write-Host "   .\setup-ssl.ps1 --force-renewal" -ForegroundColor White
     } else {
         Write-Host "✅ SSL certificate generated successfully!" -ForegroundColor Green
         Write-Host "📝 Next steps:" -ForegroundColor Yellow
-        Write-Host "   1. Update nginx.conf with HTTPS configuration" -ForegroundColor White
-        Write-Host "   2. Restart the services: docker-compose -f docker-compose.ssl.yml restart" -ForegroundColor White
+        Write-Host "   1. Copy nginx.domain.conf to nginx.conf: Copy-Item nginx.domain.conf nginx.conf" -ForegroundColor White
+        Write-Host "   2. Restart all services: docker-compose -f $ComposeFile restart" -ForegroundColor White
+        Write-Host "   3. Start all services: docker-compose -f $ComposeFile up -d" -ForegroundColor White
     }
 } else {
     Write-Host "❌ Certificate generation failed!" -ForegroundColor Red
+    Write-Host "🔍 Check the logs: docker-compose -f $ComposeFile logs certbot" -ForegroundColor Yellow
     exit 1
 }
 
@@ -71,3 +95,6 @@ Write-Host ""
 Write-Host "🔍 Certificate files location:" -ForegroundColor Cyan
 Write-Host "   - Full chain: certbot\conf\live\$Domain\fullchain.pem" -ForegroundColor White
 Write-Host "   - Private key: certbot\conf\live\$Domain\privkey.pem" -ForegroundColor White
+Write-Host ""
+Write-Host "🌐 After successful setup, your application will be available at:" -ForegroundColor Cyan
+Write-Host "   https://$Domain" -ForegroundColor White

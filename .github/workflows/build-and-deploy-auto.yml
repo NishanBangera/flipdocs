@@ -75,10 +75,10 @@ jobs:
           cd /home/ec2-user/flipdocs
           
           # Verify deployment directory exists
-          if [ ! -f docker-compose.yml ]; then
-            echo "❌ Error: docker-compose.yml not found in /home/ec2-user/flipdocs"
+          if [ ! -f docker-compose.prod.yml ]; then
+            echo "❌ Error: docker-compose.prod.yml not found in /home/ec2-user/flipdocs"
             echo "📝 Please run manual deployment setup first:"
-            echo "   https://github.com/${{ github.repository }}/blob/main/DEPLOYMENT-CHECKLIST.md"
+            echo "   https://github.com/${{ github.repository }}/blob/main/DEPLOYMENT-GUIDE.md"
             exit 1
           fi
           
@@ -91,11 +91,11 @@ jobs:
           
           # Pull latest images
           echo "📥 Pulling latest images"
-          docker-compose pull
+          docker-compose -f docker-compose.prod.yml pull
           
           # Restart containers with health check
           echo "🔄 Restarting containers"
-          docker-compose up -d
+          docker-compose -f docker-compose.prod.yml up -d
           
           # Wait for services to be ready
           echo "⏳ Waiting for services to start..."
@@ -107,18 +107,18 @@ jobs:
             echo "✅ API health check passed"
           else
             echo "⚠️ API health check failed, checking logs:"
-            docker-compose logs api --tail=10
+            docker-compose -f docker-compose.prod.yml logs api --tail=10
           fi
           
           if curl -f http://localhost > /dev/null 2>&1; then
             echo "✅ Web interface check passed"
           else
             echo "⚠️ Web interface check failed, checking logs:"
-            docker-compose logs web --tail=10
+            docker-compose -f docker-compose.prod.yml logs web --tail=10
           fi
           
           # Show final status
-          docker-compose ps
+          docker-compose -f docker-compose.prod.yml ps
           
           echo "🎉 Deployment complete!"
           echo "🌐 Application accessible at: http://${{ secrets.EC2_HOST }}"

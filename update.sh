@@ -9,12 +9,12 @@ for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTR
 done
 
 echo "📥 Pulling latest images"
-docker-compose pull
+docker-compose -f docker-compose.prod.yml pull
 
 echo "🔄 Restarting containers"
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 
 echo "✅ Update complete!"
 echo "🌐 Application: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo 'localhost')"
 
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps

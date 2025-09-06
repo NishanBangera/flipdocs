@@ -1,0 +1,58 @@
+name: flipdocs-ssl
+services:
+  api:
+    image: ${REGISTRY}/${API_IMAGE}
+    container_name: flipdocs-api
+    volumes:
+      - ./data/storage:/app/storage
+    environment:
+      - TZ=UTC
+      - PORT=3001
+      - NODE_ENV=production
+      # Clerk Configuration
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      # Supabase Configuration (API uses different names)
+      - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # CORS Configuration
+      - FRONTEND_URL=https://flipbook.ironasylum.in
+    restart: unless-stopped
+
+  web:
+    image: ${REGISTRY}/${WEB_IMAGE}
+    container_name: flipdocs-web
+    environment:
+      - NODE_ENV=production
+      # API Configuration - Use HTTPS domain
+      - NEXT_PUBLIC_API_URL=https://flipbook.ironasylum.in/api
+      # Clerk Configuration (both public and secret needed)
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      # Supabase Configuration (both prefixed and non-prefixed needed)
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: flipdocs-proxy
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+      - api
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: flipdocs-certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot:rw
+      - ./certbot/conf:/etc/letsencrypt:rw

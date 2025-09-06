@@ -21,7 +21,7 @@ import {
   ClampToEdgeWrapping,
 } from "three";
 import { degToRad } from "three/src/math/MathUtils.js";
-import { pageAtom } from "./flipbook-ui";
+import { pageAtom, zoomAtom } from "./flipbook-ui";
 import type * as THREE from "three";
 
 const easingFactor = 0.5; 
@@ -74,8 +74,20 @@ pageGeometry.setAttribute(
 const whiteColor = new Color("white");
 
 // 1x1 white PNG for missing backs (avoids loading errors with undefined)
+// "The End" image as SVG inside a data URI
 const BLANK_IMAGE =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO4Fh1wAAAAASUVORK5CYII=";
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="200">
+      <rect width="100%" height="100%" fill="white"/>
+      <text x="50%" y="50%" 
+            dominant-baseline="middle" text-anchor="middle"
+            font-size="36" font-family="Arial, sans-serif" fill="black">
+        The End
+      </text>
+    </svg>
+  `);
+
 
 const pageMaterials = [
   new MeshBasicMaterial({
@@ -110,6 +122,7 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
   const group = useRef<THREE.Group>(null);
   const turnedAt = useRef(0);
   const lastOpened = useRef(opened);
+  const isTurning = useRef(false);
 
   const skinnedMeshRef = useRef<THREE.SkinnedMesh>(null);
 
@@ -174,12 +187,24 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
     if (!skinnedMeshRef.current) {
       return;
     }
+    
+    // Only start a new turn if not currently turning or if enough time has passed
     if (lastOpened.current !== opened) {
-      turnedAt.current = +new Date();
-      lastOpened.current = opened;
+      const now = +new Date();
+      if (!isTurning.current || (now - turnedAt.current) > 200) {
+        turnedAt.current = now;
+        lastOpened.current = opened;
+        isTurning.current = true;
+      }
     }
+    
     let turningTime = Math.min(400, new Date().getTime() - turnedAt.current) / 400;
     turningTime = Math.sin(turningTime * Math.PI);
+    
+    // Mark turning as complete when animation finishes
+    if (turningTime > 0.98) {
+      isTurning.current = false;
+    }
 
     // Base target rotation for the root bone (i===0) with no drag
     let targetRotation = opened ? -Math.PI / 2 : Math.PI / 2;
@@ -247,9 +272,24 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
   });
 
   const [, setPage] = useAtom(pageAtom);
+  const [, setZoom] = useAtom(zoomAtom);
   const [highlighted, setHighlighted] = useState(false);
+  const lastClickTime = useRef(0);
+  const clickCount = useRef(0);
+  const clickTimer = useRef<NodeJS.Timeout | null>(null);
+  const CLICK_DEBOUNCE = 300; // 300ms debounce for page clicks
+  const DOUBLE_CLICK_DELAY = 300; // 300ms to detect double clicks
   // Only show pointer when click to turn is enabled
   useCursor(highlighted && clickEnabled, clickEnabled ? 'pointer' : 'auto');
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimer.current) {
+        clearTimeout(clickTimer.current);
+      }
+    };
+  }, []);
 
   return (
     <group
@@ -266,9 +306,44 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
       onClick={(e) => {
         if (!clickEnabled) return; // allow panning/group handlers to work
         e.stopPropagation();
-        // Click to toggle page (when enabled)
-        setPage(opened ? number : number + 1);
-        setHighlighted(false);
+        
+        const now = Date.now();
+        
+        // Handle double-click detection
+        clickCount.current += 1;
+        
+        if (clickCount.current === 1) {
+          // First click - start timer
+          clickTimer.current = setTimeout(() => {
+            // Single click - turn page
+            if (now - lastClickTime.current < CLICK_DEBOUNCE) {
+              clickCount.current = 0;
+              return;
+            }
+            lastClickTime.current = now;
+            
+            if (isTurning.current) {
+              clickCount.current = 0;
+              return;
+            }
+            
+            // Click to toggle page (when enabled)
+            setPage(opened ? number : number + 1);
+            setHighlighted(false);
+            clickCount.current = 0;
+          }, DOUBLE_CLICK_DELAY);
+        } else if (clickCount.current === 2) {
+          // Double click - zoom
+          if (clickTimer.current) {
+            clearTimeout(clickTimer.current);
+            clickTimer.current = null;
+          }
+          
+          // Toggle zoom: if at normal (1), zoom to 2x, otherwise zoom back to 1x
+          setZoom((prevZoom) => prevZoom === 1 ? 2 : 1);
+          setHighlighted(false);
+          clickCount.current = 0;
+        }
       }}
     >
       <primitive
@@ -288,14 +363,17 @@ interface FlipbookBookProps {
 export function FlipbookBook({ pdfPages = [], clickEnabled = true, ...props }: FlipbookBookProps) {
   const [page] = useAtom(pageAtom);
   const [delayedPage, setDelayedPage] = useState(page);
+  const isTransitioning = useRef(false);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const goToPage = () => {
       setDelayedPage((delayedPage) => {
         if (page === delayedPage) {
+          isTransitioning.current = false;
           return delayedPage;
         } else {
+          isTransitioning.current = true;
           timeout = setTimeout(
             () => {
               goToPage();

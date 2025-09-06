@@ -26,6 +26,30 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
   // Calculate max pages based on PDF structure (each spread = 2 pages)
   const maxPages = totalSheets;
 
+  // Debouncing mechanism to prevent rapid page turns
+  const lastTurnTime = useRef(0);
+  const TURN_DEBOUNCE = 300; // 300ms debounce to allow smooth turns
+
+  // Helper function to handle debounced page changes
+  const handlePageChange = (newPage: number) => {
+    const now = Date.now();
+    if (now - lastTurnTime.current < TURN_DEBOUNCE) {
+      return; // Ignore rapid clicks
+    }
+    lastTurnTime.current = now;
+    setPage(newPage);
+  };
+
+  // Helper function to handle debounced side changes
+  const handleSideChange = (newSide: 'left' | 'right') => {
+    const now = Date.now();
+    if (now - lastTurnTime.current < TURN_DEBOUNCE) {
+      return; // Ignore rapid clicks
+    }
+    lastTurnTime.current = now;
+    setSide(newSide);
+  };
+
   const [muted] = useAtom(muteAtom);
   // Keep the latest mute state without retriggering the page sound effect
   const mutedRef = useRef(muted);
@@ -86,19 +110,19 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
 
                 // If currently showing right page (side left), go back to left page (side right) of same spread
                 if (side === 'left') {
-                  setSide('right');
+                  handleSideChange('right');
                   return;
                 }
 
                 // If currently showing left page (side right), move to previous spread's right page
                 if (side === 'right') {
                   if (page > 1) {
-                    setPage(page - 1);
-                    setSide('left');
+                    handlePageChange(page - 1);
+                    handleSideChange('left');
                   } else {
                     // Going back from first spread returns to front cover
-                    setPage(0);
-                    setSide('left');
+                    handlePageChange(0);
+                    handleSideChange('left');
                   }
                 }
               }}
@@ -131,21 +155,21 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
 
                 // First tap from closed front: open first spread and slide right to show left page
                 if (page === 0 && side === 'left') {
-                  if (maxPages >= 1) setPage(1);
-                  setSide('right');
+                  if (maxPages >= 1) handlePageChange(1);
+                  handleSideChange('right');
                   return;
                 }
 
                 // Once open: right (left page visible) -> left (right page visible) on same spread
                 if (side === 'right') {
-                  setSide('left');
+                  handleSideChange('left');
                   return;
                 }
 
                 // From left (right page visible) -> advance to next spread and show left page
                 if (side === 'left') {
-                  if (page < maxPages) setPage(page + 1);
-                  setSide('right');
+                  if (page < maxPages) handlePageChange(page + 1);
+                  handleSideChange('right');
                 }
               }}
               disabled={page === maxPages && side === 'left'}
@@ -174,7 +198,7 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
               className={`pointer-events-auto w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/90 backdrop-blur shadow-md border border-gray-200 flex items-center justify-center transition-all duration-300 ${
                 page === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105 hover:bg-gray-50'
               }`}
-              onClick={() => page > 0 && setPage(page - 1)}
+              onClick={() => page > 0 && handlePageChange(page - 1)}
               disabled={page === 0}
               aria-label="Previous"
             >
@@ -198,7 +222,7 @@ export function FlipbookUI({ totalSheets = 2 }: FlipbookUIProps) {
               className={`pointer-events-auto w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/90 backdrop-blur shadow-md border border-gray-200 flex items-center justify-center transition-all duration-300 ${
                 page >= maxPages ? 'opacity-30 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105 hover:bg-gray-50'
               }`}
-              onClick={() => page < maxPages && setPage(page + 1)}
+              onClick={() => page < maxPages && handlePageChange(page + 1)}
               disabled={page >= maxPages}
               aria-label="Next"
             >

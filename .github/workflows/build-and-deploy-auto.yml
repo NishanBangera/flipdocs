@@ -70,148 +70,161 @@ jobs:
         echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        
+        # Debug: Check if key file was created and has content
+        echo "🔍 SSH key setup verification:"
+        ls -la ~/.ssh/id_rsa
+        echo "Key file size: $(wc -c < ~/.ssh/id_rsa) bytes"
+        echo "Key format check:"
+        head -1 ~/.ssh/id_rsa
+        tail -1 ~/.ssh/id_rsa
     
     - name: Test SSH connection
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
+        echo "🌐 Testing SSH connection..."
+        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
     
     - name: Deploy to EC2 with SSL
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'bash -s' << 'ENDSSH'
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'bash -s' << 'ENDSSH'
-          set -e
-          cd ${{ secrets.EC2_DEPLOYMENT_PATH }}
-          
-          # Verify deployment environment
-          echo "🔍 Verifying deployment environment..."
-          echo "Current directory: $(pwd)"
-          echo "User: $(whoami)"
-          
-          # Verify SSL deployment directory exists
-          if [ ! -f docker-compose.ssl.yml ]; then
-            echo "❌ Error: docker-compose.ssl.yml not found in ${{ secrets.EC2_DEPLOYMENT_PATH }}"
-            echo "📝 Please run SSL deployment setup first:"
-            echo "   curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash"
-            exit 1
-          fi
-          
-          # Verify environment file exists
-          if [ ! -f .env ]; then
-            echo "❌ Error: .env file not found"
-            echo "📝 Please configure environment variables first"
-            exit 1
-          fi
-          
-          # Check if Docker is running
-          if ! docker ps > /dev/null 2>&1; then
-            echo "❌ Error: Docker is not running or accessible"
-            exit 1
-          fi
-          
-          # Check if Docker Compose is available
-          if ! command -v docker-compose > /dev/null 2>&1; then
-            echo "❌ Error: docker-compose is not installed"
-            exit 1
-          fi
-          
-          # Clean old images
-          echo "🧹 Cleaning old images"
-          for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'ghcr.io/${{ github.repository_owner }}/flipdocs' 2>/dev/null || true); do
-            docker rmi $image 2>/dev/null || true
-          done
-          
-          # Pull latest images with retry
-          echo "📥 Pulling latest images"
-          for i in {1..3}; do
-            if docker-compose -f docker-compose.ssl.yml pull; then
-              echo "✅ Images pulled successfully"
-              break
-            else
-              echo "⚠️ Pull attempt $i failed, retrying..."
-              sleep 5
-            fi
-          done
-          
-          # Stop existing containers gracefully
-          echo "🛑 Stopping existing containers"
-          docker-compose -f docker-compose.ssl.yml down --remove-orphans || true
-          
-          # Start containers with health check
-          echo "� Starting containers"
-          docker-compose -f docker-compose.ssl.yml up -d
-          
-          # Wait for services to be ready
-          echo "⏳ Waiting for services to start..."
-          sleep 30
-          
-          # Health checks for SSL deployment
-          echo "🏥 Running health checks"
-          
-          # Check if containers are running
-          echo "📊 Container status:"
-          docker-compose -f docker-compose.ssl.yml ps
-          
-          if docker-compose -f docker-compose.ssl.yml ps | grep -q "Up"; then
-            echo "✅ Containers are running"
+        # Create deployment script to avoid here-document issues
+        cat > deploy_script.sh << 'EOF'
+        set -e
+        cd ${{ secrets.EC2_DEPLOYMENT_PATH }}
+        
+        # Verify deployment environment
+        echo "🔍 Verifying deployment environment..."
+        echo "Current directory: $(pwd)"
+        echo "User: $(whoami)"
+        
+        # Verify SSL deployment directory exists
+        if [ ! -f docker-compose.ssl.yml ]; then
+          echo "❌ Error: docker-compose.ssl.yml not found in ${{ secrets.EC2_DEPLOYMENT_PATH }}"
+          echo "📝 Please run SSL deployment setup first:"
+          echo "   curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash"
+          exit 1
+        fi
+        
+        # Verify environment file exists
+        if [ ! -f .env ]; then
+          echo "❌ Error: .env file not found"
+          echo "📝 Please configure environment variables first"
+          exit 1
+        fi
+        
+        # Check if Docker is running
+        if ! docker ps > /dev/null 2>&1; then
+          echo "❌ Error: Docker is not running or accessible"
+          exit 1
+        fi
+        
+        # Check if Docker Compose is available
+        if ! command -v docker-compose > /dev/null 2>&1; then
+          echo "❌ Error: docker-compose is not installed"
+          exit 1
+        fi
+        
+        # Clean old images
+        echo "🧹 Cleaning old images"
+        for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'ghcr.io/${{ github.repository_owner }}/flipdocs' 2>/dev/null || true); do
+          docker rmi $image 2>/dev/null || true
+        done
+        
+        # Pull latest images with retry
+        echo "📥 Pulling latest images"
+        for i in {1..3}; do
+          if docker-compose -f docker-compose.ssl.yml pull; then
+            echo "✅ Images pulled successfully"
+            break
           else
-            echo "❌ Some containers are not running:"
-            docker-compose -f docker-compose.ssl.yml ps
-            echo "📝 Container logs:"
-            docker-compose -f docker-compose.ssl.yml logs --tail=20
-            exit 1
+            echo "⚠️ Pull attempt $i failed, retrying..."
+            sleep 5
           fi
-          
-          # Test health endpoints with retries
-          echo "🔍 Testing health endpoints..."
-          
-          # Test web health check
-          for i in {1..5}; do
-            if curl -f -k https://localhost/health > /dev/null 2>&1; then
-              echo "✅ HTTPS health check passed"
-              break
-            elif curl -f http://localhost/health > /dev/null 2>&1; then
-              echo "⚠️ HTTP health check passed (SSL might be in setup)"
-              break
-            else
-              echo "⚠️ Health check attempt $i failed, retrying..."
-              sleep 10
-            fi
-          done
-          
-          # Test API health check
-          for i in {1..5}; do
-            if curl -f -k https://localhost/api/health > /dev/null 2>&1; then
-              echo "✅ API HTTPS health check passed"
-              break
-            elif curl -f http://localhost/api/health > /dev/null 2>&1; then
-              echo "⚠️ API HTTP health check passed (SSL might be in setup)"
-              break
-            else
-              echo "⚠️ API health check attempt $i failed, retrying..."
-              sleep 10
-            fi
-          done
-          
-          # Check SSL certificate status
-          if [ -f certbot/conf/live/flipbook.ironasylum.in/fullchain.pem ]; then
-            echo "✅ SSL certificate found"
-            echo "📅 Certificate expires:"
-            openssl x509 -in certbot/conf/live/flipbook.ironasylum.in/fullchain.pem -noout -dates | grep notAfter || true
-          else
-            echo "⚠️ SSL certificate not found - run SSL setup if needed"
-          fi
-          
-          # Final container status
-          echo "📊 Final container status:"
+        done
+        
+        # Stop existing containers gracefully
+        echo "🛑 Stopping existing containers"
+        docker-compose -f docker-compose.ssl.yml down --remove-orphans || true
+        
+        # Start containers with health check
+        echo "🚀 Starting containers"
+        docker-compose -f docker-compose.ssl.yml up -d
+        
+        # Wait for services to be ready
+        echo "⏳ Waiting for services to start..."
+        sleep 30
+        
+        # Health checks for SSL deployment
+        echo "🏥 Running health checks"
+        
+        # Check if containers are running
+        echo "📊 Container status:"
+        docker-compose -f docker-compose.ssl.yml ps
+        
+        if docker-compose -f docker-compose.ssl.yml ps | grep -q "Up"; then
+          echo "✅ Containers are running"
+        else
+          echo "❌ Some containers are not running:"
           docker-compose -f docker-compose.ssl.yml ps
-          
-          # Show service logs for troubleshooting
-          echo "📝 Recent logs:"
-          docker-compose -f docker-compose.ssl.yml logs --tail=10 --timestamps
-          
-          echo "🎉 Deployment complete!"
-          echo "🌐 Application should be accessible at: https://flipbook.ironasylum.in"
-          echo "🔍 Health endpoints:"
-          echo "   - https://flipbook.ironasylum.in/health"
-          echo "   - https://flipbook.ironasylum.in/api/health"
-        ENDSSH
+          echo "📝 Container logs:"
+          docker-compose -f docker-compose.ssl.yml logs --tail=20
+          exit 1
+        fi
+        
+        # Test health endpoints with retries
+        echo "🔍 Testing health endpoints..."
+        
+        # Test web health check
+        for i in {1..5}; do
+          if curl -f -k https://localhost/health > /dev/null 2>&1; then
+            echo "✅ HTTPS health check passed"
+            break
+          elif curl -f http://localhost/health > /dev/null 2>&1; then
+            echo "⚠️ HTTP health check passed (SSL might be in setup)"
+            break
+          else
+            echo "⚠️ Health check attempt $i failed, retrying..."
+            sleep 10
+          fi
+        done
+        
+        # Test API health check
+        for i in {1..5}; do
+          if curl -f -k https://localhost/api/health > /dev/null 2>&1; then
+            echo "✅ API HTTPS health check passed"
+            break
+          elif curl -f http://localhost/api/health > /dev/null 2>&1; then
+            echo "⚠️ API HTTP health check passed (SSL might be in setup)"
+            break
+          else
+            echo "⚠️ API health check attempt $i failed, retrying..."
+            sleep 10
+          fi
+        done
+        
+        # Check SSL certificate status
+        if [ -f certbot/conf/live/flipbook.ironasylum.in/fullchain.pem ]; then
+          echo "✅ SSL certificate found"
+          echo "📅 Certificate expires:"
+          openssl x509 -in certbot/conf/live/flipbook.ironasylum.in/fullchain.pem -noout -dates | grep notAfter || true
+        else
+          echo "⚠️ SSL certificate not found - run SSL setup if needed"
+        fi
+        
+        # Final container status
+        echo "📊 Final container status:"
+        docker-compose -f docker-compose.ssl.yml ps
+        
+        # Show service logs for troubleshooting
+        echo "📝 Recent logs:"
+        docker-compose -f docker-compose.ssl.yml logs --tail=10 --timestamps
+        
+        echo "🎉 Deployment complete!"
+        echo "🌐 Application should be accessible at: https://flipbook.ironasylum.in"
+        echo "🔍 Health endpoints:"
+        echo "   - https://flipbook.ironasylum.in/health"
+        echo "   - https://flipbook.ironasylum.in/api/health"
+        EOF
+        
+        # Transfer and execute the script
+        scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa deploy_script.sh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/deploy_script.sh && /tmp/deploy_script.sh && rm /tmp/deploy_script.sh"

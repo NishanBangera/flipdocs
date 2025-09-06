@@ -64,7 +64,7 @@ cp .env.production .env2. Install dependencies:
 
 # Deploybun install
 
-docker compose -f docker-compose.prod.yml up -d```
+docker compose -f docker-compose.ssl.yml up -d```
 
 ```
 
@@ -118,7 +118,7 @@ flipdocs/
 
 ├── docker-compose.dev.yml   # Development```
 
-├── docker-compose.prod.yml  # Production
+├── docker-compose.ssl.yml   # SSL Production
 
 └── DEPLOYMENT-GUIDE.md   # Full documentationTo build individual apps:
 

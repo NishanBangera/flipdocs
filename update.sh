@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REGISTRY=$(grep '^REGISTRY=' .env | sed 's/REGISTRY=//')
+REGISTRY=$(grep '^GHCR_REGISTRY=' .env | sed 's/GHCR_REGISTRY=//')
 
 echo "🧹 Removing old images from $REGISTRY"
 for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTRY 2>/dev/null || true); do
@@ -9,12 +9,12 @@ for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTR
 done
 
 echo "📥 Pulling latest images"
-docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.ssl.yml pull
 
 echo "🔄 Restarting containers"
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.ssl.yml up -d
 
 echo "✅ Update complete!"
-echo "🌐 Application: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo 'localhost')"
+echo "🌐 Application: https://flipbook.ironasylum.in"
 
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.ssl.yml ps

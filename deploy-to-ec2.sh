@@ -21,7 +21,8 @@ GITHUB_USERNAME=${input_username:-$GITHUB_USERNAME}
 read -p "Enter your domain (default: $DOMAIN): " input_domain
 DOMAIN=${input_domain:-$DOMAIN}
 
-read -p "Enter your email for SSL certificates: " SSL_EMAIL
+read -p "Enter your email for SSL certificates (or press Enter for default): " input_email
+SSL_EMAIL=${input_email:-"admin@ironasylum.in"}
 
 read -p "Enter your Clerk publishable key (pk_live_...): " CLERK_PUBLISHABLE_KEY
 read -p "Enter your Clerk secret key (sk_live_...): " CLERK_SECRET_KEY
@@ -137,7 +138,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name $DOMAIN www.$DOMAIN;
+    server_name $DOMAIN;
     server_tokens off;
 
     # Allow Certbot to access ACME challenge files
@@ -153,18 +154,20 @@ server {
 EOF
 
 echo "🔐 Creating SSL nginx configuration..."
-cat > nginx-ssl.conf << 'EOF'
+cat > nginx.ssl.conf << 'EOF'
 server {
     listen 80;
     listen [::]:80;
 
-    server_name flipbook.ironasylum.in www.flipbook.ironasylum.in;
+    server_name flipbook.ironasylum.in;
     server_tokens off;
 
+    # Allow Certbot to access ACME challenge files
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
+    # Redirect all other HTTP traffic to HTTPS
     location / {
         return 301 https://flipbook.ironasylum.in$request_uri;
     }
@@ -174,25 +177,41 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
 
-    server_name flipbook.ironasylum.in www.flipbook.ironasylum.in;
+    server_name flipbook.ironasylum.in;
     server_tokens off;
 
+    # SSL certificate configuration
     ssl_certificate /etc/nginx/ssl/live/flipbook.ironasylum.in/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/flipbook.ironasylum.in/privkey.pem;
 
+    # SSL configuration
     ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 10m;
 
+    # Security headers
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' https:; object-src 'none'; media-src 'self' https:; frame-src 'self' https:;" always;
 
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
+    limit_req_zone $binary_remote_addr zone=web:10m rate=100r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+
+    # Connection limiting
+    limit_conn_zone $binary_remote_addr zone=conn_limit_per_ip:10m;
+    limit_conn conn_limit_per_ip 20;
+
+    # API routes with rate limiting
     location /api/ {
+        limit_req zone=api burst=100 nodelay;
+        
         proxy_pass http://api:3001/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -203,12 +222,31 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         
+        # Timeout settings
         proxy_connect_timeout 5s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+        
+        # Buffer settings
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
     }
 
+    # Static assets caching
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+        
+        proxy_pass http://web:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Next.js static files
+    location /_next/static/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         
@@ -218,7 +256,10 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Web application with rate limiting
     location / {
+        limit_req zone=web burst=200 nodelay;
+        
         proxy_pass http://web:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -229,14 +270,28 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         
+        # Timeout settings
         proxy_connect_timeout 5s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+        
+        # Buffer settings
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
     }
 
+    # Health check endpoint
     location /health {
         access_log off;
         return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Robots.txt
+    location = /robots.txt {
+        access_log off;
+        return 200 "User-agent: *\nDisallow: /api/auth/\nDisallow: /dashboard/\n";
         add_header Content-Type text/plain;
     }
 }
@@ -274,13 +329,13 @@ if [ "$DRY_RUN" = "--dry-run" ]; then
     docker-compose -f docker-compose.ssl.yml run --rm certbot \
         certonly --webroot --webroot-path /var/www/certbot/ \
         --dry-run --email ${SSL_EMAIL} --agree-tos --no-eff-email \
-        -d $DOMAIN -d www.$DOMAIN
+        -d $DOMAIN
 else
     echo "🎯 Generating real certificate..."
     docker-compose -f docker-compose.ssl.yml run --rm certbot \
         certonly --webroot --webroot-path /var/www/certbot/ \
         --email ${SSL_EMAIL} --agree-tos --no-eff-email \
-        -d $DOMAIN -d www.$DOMAIN
+        -d $DOMAIN
 fi
 
 if [ $? -eq 0 ]; then
@@ -306,7 +361,7 @@ echo "🚀 Deploying FlipDocs with SSL..."
 
 # Switch to SSL nginx configuration
 echo "📝 Switching to SSL nginx configuration..."
-cp nginx-ssl.conf nginx.conf
+cp nginx.ssl.conf nginx.conf
 
 # Start all services
 echo "🌐 Starting all services..."

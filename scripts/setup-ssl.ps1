@@ -3,17 +3,31 @@
 # Designed for EC2 deployment with GHCR container images
 
 param(
-    [string]$Mode = "--dry-run"
+    [string]$Mode = "--dry-run",
+    [switch]$NoEmail
 )
 
 $Domain = "flipbook.ironasylum.in"
 $Email = if ($env:SSL_EMAIL) { $env:SSL_EMAIL } else { "admin@ironasylum.in" }
 $ComposeFile = "docker-compose.ssl.yml"
 
+# Set email configuration based on --no-email flag
+$EmailArg = ""
+if ($NoEmail) {
+    $EmailArg = "--register-unsafely-without-email"
+    Write-Host "⚠️  Warning: Running without email registration (not recommended for production)" -ForegroundColor Yellow
+} else {
+    $EmailArg = "--email $Email"
+}
+
 Write-Host "🔒 FlipDocs SSL Certificate Setup (GHCR Deployment)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Green
 Write-Host "Domain: $Domain" -ForegroundColor Cyan
-Write-Host "Email: $Email" -ForegroundColor Cyan
+if (-not $NoEmail) {
+    Write-Host "Email: $Email" -ForegroundColor Cyan
+} else {
+    Write-Host "Email: Not provided (unsafe mode)" -ForegroundColor Yellow
+}
 Write-Host "Mode: $Mode" -ForegroundColor Cyan
 Write-Host ""
 
@@ -68,20 +82,28 @@ try {
 Write-Host "🔐 Generating SSL certificate..." -ForegroundColor Yellow
 if ($Mode -eq "--dry-run") {
     Write-Host "🧪 Running in dry-run mode (test mode)..." -ForegroundColor Cyan
-    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
+    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run $EmailArg --agree-tos --no-eff-email -d $Domain
 } else {
     Write-Host "🎯 Running in production mode..." -ForegroundColor Cyan
-    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --email $Email --agree-tos --no-eff-email -d $Domain -d www.$Domain
+    $result = docker-compose -f $ComposeFile run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ $EmailArg --agree-tos --no-eff-email -d $Domain
 }
 
 if ($LASTEXITCODE -eq 0) {
     if ($Mode -eq "--dry-run") {
-        Write-Host "✅ Dry run successful! You can now run without --dry-run flag:" -ForegroundColor Green
-        Write-Host "   .\setup-ssl.ps1 --force-renewal" -ForegroundColor White
+        Write-Host "✅ Dry run successful! You can now run:" -ForegroundColor Green
+        if ($NoEmail) {
+            Write-Host "   .\setup-ssl.ps1 --force-renewal -NoEmail" -ForegroundColor White
+        } else {
+            Write-Host "   .\setup-ssl.ps1 --force-renewal" -ForegroundColor White
+        }
     } else {
-        Write-Host "✅ SSL certificate generated successfully!" -ForegroundColor Green
+        if ($NoEmail) {
+            Write-Host "✅ SSL certificate generated successfully (without email registration)!" -ForegroundColor Green
+        } else {
+            Write-Host "✅ SSL certificate generated successfully!" -ForegroundColor Green
+        }
         Write-Host "📝 Next steps:" -ForegroundColor Yellow
-        Write-Host "   1. Copy nginx.domain.conf to nginx.conf: Copy-Item nginx.domain.conf nginx.conf" -ForegroundColor White
+        Write-Host "   1. Copy nginx.ssl.conf to nginx.conf: Copy-Item nginx.ssl.conf nginx.conf" -ForegroundColor White
         Write-Host "   2. Restart all services: docker-compose -f $ComposeFile restart" -ForegroundColor White
         Write-Host "   3. Start all services: docker-compose -f $ComposeFile up -d" -ForegroundColor White
     }

@@ -1,34 +1,20 @@
 #!/bin/bash
-
-# Simple Update Script for FlipDocs
-# Based on the sleep-scoring reference implementation
-
 set -e
 
-# Load environment variables
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
+REGISTRY=$(grep '^REGISTRY=' .env | sed 's/REGISTRY=//')
 
-# Get registry from environment
-REGISTRY=$(grep '^REGISTRY=' .env | sed 's/REGISTRY=//' || echo "ghcr.io/nishanbangera")
-
-echo "🧹 Removing all images from registry $REGISTRY"
-for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTRY); do
-  echo "Removing image $image"
-  docker rmi $image
+echo "🧹 Removing old images from $REGISTRY"
+for image in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep $REGISTRY 2>/dev/null || true); do
+    docker rmi $image 2>/dev/null || true
 done
 
-echo "📥 Pulling latest images from registry $REGISTRY"
-docker compose -f docker-compose.simple.yml pull
+echo "📥 Pulling latest images"
+docker-compose pull
 
 echo "🔄 Restarting containers"
-docker compose -f docker-compose.simple.yml up -d
+docker-compose up -d
 
 echo "✅ Update complete!"
-echo "🌐 Your application is running at: http://localhost"
+echo "🌐 Application: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo 'localhost')"
 
-# Optional: Show status
-echo ""
-echo "📊 Container Status:"
-docker compose -f docker-compose.simple.yml ps
+docker-compose ps

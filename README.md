@@ -1,78 +1,152 @@
-# FlipDocs Turborepo
+# FlipDocs# FlipDocs Turborepo
 
-This is a Turborepo monorepo for FlipDocs - a document flipbook platform.
 
-## What's inside?
 
-This Turborepo includes the following packages/apps:
+Convert PDFs into interactive flipbooks with ease.This is a Turborepo monorepo for FlipDocs - a document flipbook platform.
 
-### Apps
 
-- `@flipdocs/web`: a [Next.js](https://nextjs.org/) app for the frontend
+
+## Features## What's inside?
+
+
+
+- 📄 PDF to flipbook conversionThis Turborepo includes the following packages/apps:
+
+- 🔐 Secure authentication with Clerk
+
+- 🗄️ File storage with Supabase### Apps
+
+- 🚀 Containerized deployment
+
+- ⚡ Fast performance with ElysiaJS and Next.js- `@flipdocs/web`: a [Next.js](https://nextjs.org/) app for the frontend
+
 - `@flipdocs/api`: an [ElysiaJS](https://elysiajs.com/) API server powered by [Bun](https://bun.sh/)
+
+## Quick Start
 
 ### Packages
 
-- `@flipdocs/ui`: shared React component library
-- `@flipdocs/config`: shared configuration and environment variables
-- `@flipdocs/types`: shared TypeScript type definitions
+### Development
 
-## Getting Started
+```bash- `@flipdocs/ui`: shared React component library
+
+# Install dependencies- `@flipdocs/config`: shared configuration and environment variables
+
+npm install- `@flipdocs/types`: shared TypeScript type definitions
+
+
+
+# Start development environment## Getting Started
+
+docker compose -f docker-compose.dev.yml up -d
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) (latest version)
-- [Node.js](https://nodejs.org/) 18+ (for some development tools)
+# Access the application
 
-### Installation
+open http://localhost:3000- [Bun](https://bun.sh/) (latest version)
 
-1. Clone the repository
-2. Install dependencies:
+```- [Node.js](https://nodejs.org/) 18+ (for some development tools)
+
+
+
+### Production### Installation
 
 ```bash
-bun install
+
+# Configure environment1. Clone the repository
+
+cp .env.production .env2. Install dependencies:
+
+# Edit .env with your actual values
+
+```bash
+
+# Deploybun install
+
+docker compose -f docker-compose.prod.yml up -d```
+
 ```
 
 ### Development
 
+## Documentation
+
 To run all apps in development mode:
 
-```bash
-bun dev
+- **[Complete Deployment Guide](./DEPLOYMENT-GUIDE.md)** - Comprehensive setup and troubleshooting
+
+- **[Environment Configuration](./DEPLOYMENT-GUIDE.md#environment-configuration)** - Required variables and setup```bash
+
+- **[Troubleshooting](./DEPLOYMENT-GUIDE.md#troubleshooting)** - Common issues and solutionsbun dev
+
 ```
+
+## Tech Stack
 
 To run individual apps:
 
-```bash
-# Run only the web app
-bun dev --filter=@flipdocs/web
+- **Frontend**: Next.js with TypeScript
 
-# Run only the API
+- **Backend**: ElysiaJS with Bun runtime  ```bash
+
+- **Database**: Supabase# Run only the web app
+
+- **Authentication**: Clerkbun dev --filter=@flipdocs/web
+
+- **Deployment**: Docker + GitHub Actions
+
+- **Infrastructure**: EC2 + GHCR# Run only the API
+
 bun dev --filter=@flipdocs/api
+
+## Project Structure```
+
+
+
+```### Building
+
+flipdocs/
+
+├── apps/To build all apps:
+
+│   ├── api/              # ElysiaJS API
+
+│   └── web/              # Next.js frontend```bash
+
+├── packages/             # Shared packagesbun run build
+
+├── docker-compose.dev.yml   # Development```
+
+├── docker-compose.prod.yml  # Production
+
+└── DEPLOYMENT-GUIDE.md   # Full documentationTo build individual apps:
+
 ```
 
-### Building
-
-To build all apps:
-
 ```bash
-bun run build
-```
 
-To build individual apps:
+## Contributing# Build only the web app
 
-```bash
-# Build only the web app
 bun run build --filter=@flipdocs/web
 
-# Build only the API
-bun run build --filter=@flipdocs/api
-```
+1. Fork the repository
+
+2. Create a feature branch# Build only the API
+
+3. Make your changesbun run build --filter=@flipdocs/api
+
+4. Test with `docker compose -f docker-compose.dev.yml up````
+
+5. Submit a pull request
 
 ### Type Checking
 
+## License
+
 To run type checking across all projects:
 
+MIT License - see LICENSE file for details.
 ```bash
 bun run type-check
 ```

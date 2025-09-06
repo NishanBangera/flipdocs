@@ -1,111 +1,48 @@
-# FlipDocs Production Docker Compose
-# This file is used for production deployments with pre-built images from GHCR
-# Usage: docker-compose -f docker-compose.prod.yml up -d
-
+name: flipdocs
 services:
-  # API Service (ElysiaJS with Bun)
   api:
-    image: ghcr.io/nishanbangera/flipdocs-api:latest
+    image: ${REGISTRY}/${API_IMAGE}
+    container_name: flipdocs-api
+    volumes:
+      - ./data/storage:/app/storage
+    environment:
+      - TZ=UTC
+      - PORT=3001
+      - NODE_ENV=production
+      # Clerk Configuration
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      # Supabase Configuration (API uses different names)
+      - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # CORS Configuration
+      - FRONTEND_URL=http://web:3000
     restart: unless-stopped
-    env_file:
-      - .env.production
-    depends_on:
-      - redis
-    networks:
-      - flipdocs-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
 
-  # Web Service (Next.js)
   web:
-    image: ghcr.io/nishanbangera/flipdocs-web:latest
+    image: ${REGISTRY}/${WEB_IMAGE}
+    container_name: flipdocs-web
+    environment:
+      - NODE_ENV=production
+      # API Configuration - Use env variable for external access
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      # Clerk Configuration (both public and secret needed)
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      # Supabase Configuration (both prefixed and non-prefixed needed)
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
-    env_file:
-      - .env.production
-    depends_on:
-      - api
-    networks:
-      - flipdocs-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
 
-  # Nginx Load Balancer and Reverse Proxy
   nginx:
     image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
+    container_name: flipdocs-proxy
     volumes:
-      - ./docker/nginx/prod-http.conf:/etc/nginx/nginx.conf:ro
-      - nginx_logs:/var/log/nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - ${PORT:-80}:80
     depends_on:
       - web
       - api
-    networks:
-      - flipdocs-network
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.2'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
-
-  # Redis for caching and sessions
-  redis:
-    image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    networks:
-      - flipdocs-network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.2'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
-
-
-
-volumes:
-  nginx_logs:
-  redis_data:
-
-networks:
-  flipdocs-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

@@ -1,19 +1,8 @@
 # FlipDocs Development Docker Compose
 # This file is used for local development with live reloading and debugging
-# Usage: docker-compose up -d
+# Usage: docker-compose -f docker-compose.dev.yml up -d
 
 services:
-  # Redis for caching and sessions
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - flipdocs-network
-
   # API Service (ElysiaJS with Bun)
   api:
     build:
@@ -26,18 +15,15 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
-      - REDIS_URL=redis://redis:6379
     env_file:
       - .env.local
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./packages:/app/packages
-    depends_on:
-      - redis
     networks:
       - flipdocs-network
     working_dir: /app/apps/api
-    command: ["bun", "src/index.ts"]
+    command: ["bun", "src/server.ts"]
 
   # Web Service (Next.js)
   web:
@@ -52,6 +38,8 @@ services:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:3001
       - PORT=3000
+    env_file:
+      - .env.local
     volumes:
       - ./apps/web:/app/apps/web
       - ./packages:/app/packages
@@ -69,18 +57,13 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./docker/nginx/dev.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/ssl:/etc/nginx/ssl
     depends_on:
       - web
       - api
     networks:
       - flipdocs-network
-
-volumes:
-  redis_data:
 
 networks:
   flipdocs-network:

@@ -89,7 +89,20 @@ jobs:
         # Create deployment script to avoid here-document issues
         cat > deploy_script.sh << 'EOF'
         set -e
-        cd ${{ secrets.EC2_DEPLOYMENT_PATH }}
+        
+        # Check if deployment directory exists, if not create it
+        if [ ! -d "${{ secrets.EC2_DEPLOYMENT_PATH }}" ]; then
+          echo "📁 Deployment directory doesn't exist. Setting up SSL deployment..."
+          mkdir -p "${{ secrets.EC2_DEPLOYMENT_PATH }}"
+          cd "${{ secrets.EC2_DEPLOYMENT_PATH }}"
+          
+          echo "📥 Downloading SSL deployment setup..."
+          curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash
+          
+          echo "✅ SSL deployment setup completed"
+        else
+          cd ${{ secrets.EC2_DEPLOYMENT_PATH }}
+        fi
         
         # Verify deployment environment
         echo "🔍 Verifying deployment environment..."
@@ -98,16 +111,25 @@ jobs:
         
         # Verify SSL deployment directory exists
         if [ ! -f docker-compose.ssl.yml ]; then
-          echo "❌ Error: docker-compose.ssl.yml not found in ${{ secrets.EC2_DEPLOYMENT_PATH }}"
-          echo "📝 Please run SSL deployment setup first:"
+          echo "❌ Error: docker-compose.ssl.yml not found in $(pwd)"
+          echo "📝 This might mean SSL deployment setup wasn't completed properly."
+          echo "🔍 Directory contents:"
+          ls -la
+          echo ""
+          echo "📝 To fix this, SSH into your EC2 instance and run:"
           echo "   curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash"
           exit 1
         fi
         
         # Verify environment file exists
         if [ ! -f .env ]; then
-          echo "❌ Error: .env file not found"
-          echo "📝 Please configure environment variables first"
+          echo "❌ Error: .env file not found in $(pwd)"
+          echo "📝 This might mean SSL deployment setup wasn't completed properly."
+          echo "🔍 Directory contents:"
+          ls -la
+          echo ""
+          echo "📝 To fix this, SSH into your EC2 instance and run:"
+          echo "   curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy-to-ec2.sh | bash"
           exit 1
         fi
         

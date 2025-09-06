@@ -26,15 +26,18 @@ import type * as THREE from "three";
 
 const easingFactor = 0.5; 
 const easingFactorFold = 0.3; 
-const insideCurveStrength = 0.08; 
-const outsideCurveStrength = 0.02; 
-const turningCurveStrength = 0.05; 
+const insideCurveStrength = 0.04; // Reduced curve strength
+const outsideCurveStrength = 0.01; // Reduced curve strength
+const turningCurveStrength = 0.025; // Reduced curve strength
 
 const PAGE_WIDTH = 1.28;
 const PAGE_HEIGHT = 1.71; 
 const PAGE_DEPTH = 0.003;
 const PAGE_SEGMENTS = 30;
 const SEGMENT_WIDTH = PAGE_WIDTH / PAGE_SEGMENTS;
+
+// Maximum visual depth to prevent excessive thickness with many pages
+const MAX_VISUAL_DEPTH = 0.15;
 
 const pageGeometry = new BoxGeometry(
   PAGE_WIDTH,
@@ -112,9 +115,10 @@ interface PageProps {
   frontImg: string;
   backImg?: string;
   clickEnabled?: boolean;
+  totalPages: number;
 }
 
-const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnabled = true, ...props }: PageProps) => {
+const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnabled = true, totalPages, ...props }: PageProps) => {
   // Use useTexture with data URLs
   const [picture, picture2] = useTexture([frontImg, backImg || BLANK_IMAGE]);
   picture.colorSpace = picture2.colorSpace = SRGBColorSpace;
@@ -125,6 +129,20 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
   const isTurning = useRef(false);
 
   const skinnedMeshRef = useRef<THREE.SkinnedMesh>(null);
+
+  // Calculate optimized Z position to prevent excessive thickness
+  const calculatePageZ = (pageNumber: number, currentPage: number, totalPages: number) => {
+    const baseZ = -pageNumber * PAGE_DEPTH + currentPage * PAGE_DEPTH;
+    
+    // Limit the total visual depth
+    const clampedZ = Math.min(baseZ, MAX_VISUAL_DEPTH);
+    
+    // For pages far from the current viewing area, compress their depth contribution
+    const distanceFromCurrent = Math.abs(pageNumber - currentPage);
+    const compressionFactor = Math.max(0.1, 1 - (distanceFromCurrent / Math.max(totalPages * 0.1, 10)));
+    
+    return clampedZ * compressionFactor;
+  };
 
   // Improve text clarity by using sharper filtering and disabling mipmaps
   useEffect(() => {
@@ -209,7 +227,9 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
     // Base target rotation for the root bone (i===0) with no drag
     let targetRotation = opened ? -Math.PI / 2 : Math.PI / 2;
     if (!bookClosed) {
-      targetRotation += degToRad(number * 0.8);
+      // Reduce the angle increment for books with many pages to prevent excessive curvature
+      const angleIncrement = Math.min(0.8, 20 / totalPages); // Scale down for large books
+      targetRotation += degToRad(number * angleIncrement);
     }
 
     const bones = skinnedMeshRef.current.skeleton.bones;
@@ -221,10 +241,12 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
       const isPageFullyOpened = opened && turningTime < 0.1;
       const isPageFullyClosed = !opened && turningTime < 0.1;
       
-      const insideCurveIntensity = i < 8 ? Math.sin(i * 0.2 + 0.25) : 0;
-      const outsideCurveIntensity = i >= 8 ? Math.cos(i * 0.3 + 0.09) : 0;
+      // Limit curve intensity to prevent excessive bulging
+      const maxCurveIntensity = 0.6; // Limit curve to 60% of original
+      const insideCurveIntensity = i < 8 ? Math.sin(i * 0.2 + 0.25) * maxCurveIntensity : 0;
+      const outsideCurveIntensity = i >= 8 ? Math.cos(i * 0.3 + 0.09) * maxCurveIntensity : 0;
       const turningIntensity =
-        Math.sin(i * Math.PI * (1 / bones.length)) * turningTime;
+        Math.sin(i * Math.PI * (1 / bones.length)) * turningTime * maxCurveIntensity;
       
       let rotationAngle: number;
       if (bookClosed) {
@@ -237,14 +259,14 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
         // Keep pages flat when fully opened or closed
         rotationAngle = i === 0 ? targetRotation : 0;
       } else {
-        // Apply curves only during turning animation
+        // Apply curves only during turning animation with limited intensity
         rotationAngle =
           insideCurveStrength * insideCurveIntensity * targetRotation -
           outsideCurveStrength * outsideCurveIntensity * targetRotation +
           turningCurveStrength * turningIntensity * targetRotation;
       }
       
-      let foldRotationAngle = degToRad(Math.sign(targetRotation) * 2);
+      let foldRotationAngle = degToRad(Math.sign(targetRotation) * Math.min(2, 10 / totalPages)); // Scale down fold for large books
       if (bookClosed || isPageFullyOpened || isPageFullyClosed) {
         foldRotationAngle = 0;
       }
@@ -349,7 +371,7 @@ const Page = ({ number, page, opened, bookClosed, frontImg, backImg, clickEnable
       <primitive
         object={manualSkinnedMesh}
         ref={skinnedMeshRef}
-        position-z={-number * PAGE_DEPTH + page * PAGE_DEPTH}
+        position-z={calculatePageZ(number, page, totalPages)}
       />
     </group>
   );
@@ -417,6 +439,7 @@ export function FlipbookBook({ pdfPages = [], clickEnabled = true, ...props }: F
           frontImg={sheet.front}
           backImg={sheet.back}
           clickEnabled={clickEnabled}
+          totalPages={sheets.length}
         />
       ))}
     </group>
